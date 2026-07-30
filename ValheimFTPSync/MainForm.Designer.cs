@@ -33,12 +33,14 @@
             browseAppButton = new Button();
             russiaLanguageButton = new Button();
             usLanguageButton = new Button();
+            kzLanguageButton = new Button();
             SuspendLayout();
             // 
             // appPathTextBox
             // 
             resources.ApplyResources(appPathTextBox, "appPathTextBox");
             appPathTextBox.Name = "appPathTextBox";
+            appPathTextBox.TextChanged += appPathTextBox_TextChanged;
             // 
             // browseAppButton
             // 
@@ -62,10 +64,19 @@
             usLanguageButton.UseVisualStyleBackColor = true;
             usLanguageButton.Click += LanguageButton_Click;
             // 
+            // kzLanguageButton
+            // 
+            resources.ApplyResources(kzLanguageButton, "kzLanguageButton");
+            kzLanguageButton.Name = "kzLanguageButton";
+            kzLanguageButton.Tag = "kk-KZ";
+            kzLanguageButton.UseVisualStyleBackColor = true;
+            kzLanguageButton.Click += LanguageButton_Click;
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(kzLanguageButton);
             Controls.Add(usLanguageButton);
             Controls.Add(russiaLanguageButton);
             Controls.Add(browseAppButton);
@@ -81,5 +92,6 @@
         private Button browseAppButton;
         private Button russiaLanguageButton;
         private Button usLanguageButton;
+        private Button kzLanguageButton;
     }
 }

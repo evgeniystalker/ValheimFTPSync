@@ -5,7 +5,8 @@ namespace ValheimFTPSync
 {
     public partial class MainForm : Form
     {
-        public MainForm()
+
+         public MainForm()
         {
             InitializeComponent();
         }
@@ -29,8 +30,6 @@ namespace ValheimFTPSync
             rm.ApplyResources(this, "$this");
 
             // Обновляем подсказки текстбокса.
-            //appPathTextBox_LanguageUpdate(oldUICulture, culture);
-
         }
 
         private void LanguageButton_Click(object sender, EventArgs e)
@@ -38,6 +37,20 @@ namespace ValheimFTPSync
             if (sender is Control control && control.Tag is string locale)
             {
                 ChangeLanguage(locale);
+            }
+        }
+
+        private void appPathTextBox_TextChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.AppFolderPath = appPathTextBox.Text;
+            if (Directory.Exists(appPathTextBox.Text))
+            {
+                string exePath = Path.Combine(appPathTextBox.Text, "valheim.exe");
+                if (File.Exists(exePath))
+                {
+                    // Файл найден! Сохраняем настройки
+                    Properties.Settings.Default.Save();
+                }
             }
         }
     }
