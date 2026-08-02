@@ -1,6 +1,6 @@
 ﻿namespace ValheimFTPSync
 {
-    partial class AppSettings
+    partial class ServerArgsForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AppSettings));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerArgsForm));
             checkBoxCrossPlay = new CheckBox();
             checkBoxBatchMode = new CheckBox();
             labelPassword = new Label();
@@ -42,144 +42,107 @@
             labelName = new Label();
             buttonCancel = new Button();
             buttonOk = new Button();
+            resetButton = new Button();
             SuspendLayout();
             // 
             // checkBoxCrossPlay
             // 
-            checkBoxCrossPlay.AutoSize = true;
-            checkBoxCrossPlay.CheckAlign = ContentAlignment.MiddleRight;
+            resources.ApplyResources(checkBoxCrossPlay, "checkBoxCrossPlay");
             checkBoxCrossPlay.Checked = true;
             checkBoxCrossPlay.CheckState = CheckState.Checked;
-            checkBoxCrossPlay.Location = new Point(206, 99);
             checkBoxCrossPlay.Name = "checkBoxCrossPlay";
-            checkBoxCrossPlay.Size = new Size(80, 19);
-            checkBoxCrossPlay.TabIndex = 22;
-            checkBoxCrossPlay.Text = "-crossplay";
             checkBoxCrossPlay.UseVisualStyleBackColor = true;
             // 
             // checkBoxBatchMode
             // 
-            checkBoxBatchMode.AutoSize = true;
-            checkBoxBatchMode.CheckAlign = ContentAlignment.MiddleRight;
+            resources.ApplyResources(checkBoxBatchMode, "checkBoxBatchMode");
             checkBoxBatchMode.Checked = true;
             checkBoxBatchMode.CheckState = CheckState.Checked;
-            checkBoxBatchMode.Location = new Point(108, 99);
             checkBoxBatchMode.Name = "checkBoxBatchMode";
-            checkBoxBatchMode.Size = new Size(92, 19);
-            checkBoxBatchMode.TabIndex = 21;
-            checkBoxBatchMode.Text = "-batchmode";
             checkBoxBatchMode.UseVisualStyleBackColor = true;
             // 
             // labelPassword
             // 
-            labelPassword.AutoSize = true;
-            labelPassword.Location = new Point(12, 73);
+            resources.ApplyResources(labelPassword, "labelPassword");
             labelPassword.Name = "labelPassword";
-            labelPassword.Size = new Size(62, 15);
-            labelPassword.TabIndex = 18;
-            labelPassword.Text = "-password";
             // 
             // labelWorld
             // 
-            labelWorld.AutoSize = true;
-            labelWorld.Location = new Point(12, 44);
+            resources.ApplyResources(labelWorld, "labelWorld");
             labelWorld.Name = "labelWorld";
-            labelWorld.Size = new Size(42, 15);
-            labelWorld.TabIndex = 19;
-            labelWorld.Text = "-world";
             // 
             // textBoxPassword
             // 
-            textBoxPassword.Location = new Point(80, 70);
+            resources.ApplyResources(textBoxPassword, "textBoxPassword");
             textBoxPassword.Name = "textBoxPassword";
-            textBoxPassword.Size = new Size(206, 23);
-            textBoxPassword.TabIndex = 15;
             textBoxPassword.UseSystemPasswordChar = true;
             textBoxPassword.Enter += textBoxPassword_Enter;
             textBoxPassword.Leave += textBoxPassword_Leave;
             // 
             // textBoxWorld
             // 
-            textBoxWorld.Location = new Point(60, 41);
+            resources.ApplyResources(textBoxWorld, "textBoxWorld");
             textBoxWorld.Name = "textBoxWorld";
-            textBoxWorld.Size = new Size(226, 23);
-            textBoxWorld.TabIndex = 16;
             // 
             // labelPort
             // 
-            labelPort.AutoSize = true;
-            labelPort.Location = new Point(202, 15);
+            resources.ApplyResources(labelPort, "labelPort");
             labelPort.Name = "labelPort";
-            labelPort.Size = new Size(34, 15);
-            labelPort.TabIndex = 20;
-            labelPort.Text = "-port";
             // 
             // textBoxPort
             // 
-            textBoxPort.Location = new Point(242, 12);
+            resources.ApplyResources(textBoxPort, "textBoxPort");
             textBoxPort.Name = "textBoxPort";
-            textBoxPort.Size = new Size(44, 23);
-            textBoxPort.TabIndex = 17;
             // 
             // textBoxName
             // 
-            textBoxName.Location = new Point(60, 12);
+            resources.ApplyResources(textBoxName, "textBoxName");
             textBoxName.Name = "textBoxName";
-            textBoxName.Size = new Size(136, 23);
-            textBoxName.TabIndex = 14;
             // 
             // checkBoxNoGraphics
             // 
-            checkBoxNoGraphics.AutoSize = true;
-            checkBoxNoGraphics.CheckAlign = ContentAlignment.MiddleRight;
+            resources.ApplyResources(checkBoxNoGraphics, "checkBoxNoGraphics");
             checkBoxNoGraphics.Checked = true;
             checkBoxNoGraphics.CheckState = CheckState.Checked;
-            checkBoxNoGraphics.Location = new Point(12, 99);
             checkBoxNoGraphics.Name = "checkBoxNoGraphics";
-            checkBoxNoGraphics.Size = new Size(90, 19);
-            checkBoxNoGraphics.TabIndex = 13;
-            checkBoxNoGraphics.Text = "-nographics";
             checkBoxNoGraphics.UseVisualStyleBackColor = true;
             // 
             // labelName
             // 
-            labelName.AutoSize = true;
-            labelName.Location = new Point(12, 15);
+            resources.ApplyResources(labelName, "labelName");
             labelName.Name = "labelName";
-            labelName.Size = new Size(42, 15);
-            labelName.TabIndex = 12;
-            labelName.Text = "-name";
             // 
             // buttonCancel
             // 
             buttonCancel.DialogResult = DialogResult.Cancel;
-            buttonCancel.Location = new Point(211, 129);
+            resources.ApplyResources(buttonCancel, "buttonCancel");
             buttonCancel.Name = "buttonCancel";
-            buttonCancel.Size = new Size(75, 23);
-            buttonCancel.TabIndex = 11;
-            buttonCancel.Text = "Cancel";
             buttonCancel.UseVisualStyleBackColor = true;
             buttonCancel.Click += buttonCancel_Click;
             // 
             // buttonOk
             // 
             buttonOk.DialogResult = DialogResult.OK;
-            buttonOk.Location = new Point(121, 129);
+            resources.ApplyResources(buttonOk, "buttonOk");
             buttonOk.Name = "buttonOk";
-            buttonOk.Size = new Size(75, 23);
-            buttonOk.TabIndex = 10;
-            buttonOk.Text = "OK";
             buttonOk.UseVisualStyleBackColor = true;
             buttonOk.Click += buttonOk_Click;
             // 
-            // AppSettings
+            // resetButton
+            // 
+            resources.ApplyResources(resetButton, "resetButton");
+            resetButton.Name = "resetButton";
+            resetButton.UseVisualStyleBackColor = true;
+            resetButton.Click += resetButton_Click;
+            // 
+            // ServerArgsForm
             // 
             AcceptButton = buttonOk;
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = buttonCancel;
-            ClientSize = new Size(304, 166);
             ControlBox = false;
+            Controls.Add(resetButton);
             Controls.Add(checkBoxCrossPlay);
             Controls.Add(checkBoxBatchMode);
             Controls.Add(labelPassword);
@@ -194,10 +157,7 @@
             Controls.Add(buttonCancel);
             Controls.Add(buttonOk);
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            Icon = (Icon)resources.GetObject("$this.Icon");
-            Name = "AppSettings";
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Настройки запуска приложения сервера.";
+            Name = "ServerArgsForm";
             ResumeLayout(false);
             PerformLayout();
         }
@@ -216,5 +176,6 @@
         private Label labelName;
         private Button buttonCancel;
         private Button buttonOk;
+        private Button resetButton;
     }
 }

@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ValheimFTPSync.Properties" GeneratedClassName="ServerArgsSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="Name" Type="System.String" Scope="User">
+      <Value Profile="(Default)">My server</Value>
+    </Setting>
+    <Setting Name="Port" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2456</Value>
+    </Setting>
+    <Setting Name="World" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Dedicated</Value>
+    </Setting>
+    <Setting Name="Password" Type="System.String" Scope="User">
+      <Value Profile="(Default)">secret</Value>
+    </Setting>
+    <Setting Name="Nographics" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="Batchmode" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="Crossplay" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

@@ -26,23 +26,12 @@ namespace ValheimFTPSync.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string AppFolderPath {
+        public string ServerAppFolderPath {
             get {
-                return ((string)(this["AppFolderPath"]));
+                return ((string)(this["ServerAppFolderPath"]));
             }
             set {
-                this["AppFolderPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::System.Collections.Specialized.StringCollection AppSetting {
-            get {
-                return ((global::System.Collections.Specialized.StringCollection)(this["AppSetting"]));
-            }
-            set {
-                this["AppSetting"] = value;
+                this["ServerAppFolderPath"] = value;
             }
         }
         

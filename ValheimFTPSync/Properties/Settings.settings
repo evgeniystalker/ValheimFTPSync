@@ -2,10 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ValheimFTPSync.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="AppFolderPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="AppSetting" Type="System.Collections.Specialized.StringCollection" Scope="User">
+    <Setting Name="ServerAppFolderPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="DisplayPostion" Type="System.Drawing.Point" Scope="User">

@@ -6,17 +6,19 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml.Serialization;
+using ValheimFTPSync.Configuration;
 
 namespace ValheimFTPSync
 {
-    public partial class AppSettings : Form
+    public partial class ServerArgsForm : Form
     {
-        private AppSettingManager SettingManager { get; set; }
-        public AppSettings(AppSettingManager appSetting)
+        private ServerArgsSettingsManager SettingManager { get; set; }
+
+        internal ServerArgsForm(ServerArgsSettingsManager appSetting)
         {
-            SettingManager = appSetting;
             InitializeComponent();
-            SettingManager.Load();
+            SettingManager = appSetting;
+            SettingManager.Initialize();
             UpdateUI();
         }
 
@@ -29,6 +31,7 @@ namespace ValheimFTPSync
             SettingManager.Nographics = checkBoxNoGraphics.Checked;
             SettingManager.Batchmode = checkBoxBatchMode.Checked;
             SettingManager.Crossplay = checkBoxCrossPlay.Checked;
+            SettingManager.Save();
         }
         private void UpdateUI()
         {
@@ -54,6 +57,12 @@ namespace ValheimFTPSync
         private void textBoxPassword_Leave(object sender, EventArgs e)
         {
             textBoxPassword.UseSystemPasswordChar = true;
+        }
+
+        private void resetButton_Click(object sender, EventArgs e)
+        {
+            SettingManager.Default();
+            UpdateUI();
         }
     }
 }
