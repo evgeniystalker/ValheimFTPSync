@@ -11,6 +11,8 @@ namespace ValheimFTPSync.Configuration
         public string FtpUrl { get; set; }
         public string ValheimExePath => string.IsNullOrWhiteSpace(ServerAppFolderPath) ? string.Empty : Path.Combine(ServerAppFolderPath, "valheim_server.exe");
 
+        public Point DisplayPostion { get; set; }
+
         public AppSettingManager()
         {
             Initialize();
@@ -20,6 +22,7 @@ namespace ValheimFTPSync.Configuration
         {
             Properties.Settings.Default.ServerAppFolderPath = ServerAppFolderPath;
             Properties.Settings.Default.FtpUrl = FtpUrl;
+            Properties.Settings.Default.DisplayPostion = DisplayPostion;
 
             Properties.Settings.Default.Save();
         }
@@ -29,6 +32,7 @@ namespace ValheimFTPSync.Configuration
         {
             ServerAppFolderPath = Properties.Settings.Default.ServerAppFolderPath;
             FtpUrl = Properties.Settings.Default.FtpUrl;
+            DisplayPostion = Properties.Settings.Default.DisplayPostion;
         }
 
         public void Reset()
@@ -41,6 +45,7 @@ namespace ValheimFTPSync.Configuration
             var settings = Properties.Settings.Default;
             ServerAppFolderPath = (string)settings.Properties[nameof(settings.ServerAppFolderPath)].DefaultValue;
             FtpUrl = (string)settings.Properties[nameof(settings.FtpUrl)].DefaultValue;
+            DisplayPostion = (Point)settings.Properties[nameof(settings.DisplayPostion)].DefaultValue;
         }
     }
 }

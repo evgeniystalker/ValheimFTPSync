@@ -116,6 +116,7 @@
             // 
             resources.ApplyResources(ftpUrlTextBox, "ftpUrlTextBox");
             ftpUrlTextBox.Name = "ftpUrlTextBox";
+            ftpUrlTextBox.TextChanged += ftpUrlTextBox_TextChanged;
             // 
             // pictureBox1
             // 
@@ -144,6 +145,7 @@
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "MainForm";
+            LocationChanged += MainForm_LocationChanged;
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();

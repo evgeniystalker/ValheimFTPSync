@@ -46,11 +46,10 @@ namespace ValheimFTPSync
 
         private void serverAppPathTextBox_TextChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.ServerAppFolderPath = serverAppPathTextBox.Text;
-            if (Directory.Exists(serverAppPathTextBox.Text))
+            SettingManager.AppSettingManager.ServerAppFolderPath = serverAppPathTextBox.Text;
+            if (Directory.Exists(SettingManager.AppSettingManager.ServerAppFolderPath))
             {
-                string exePath = Path.Combine(serverAppPathTextBox.Text, "valheim.exe");
-                if (File.Exists(exePath))
+                if (File.Exists(SettingManager.AppSettingManager.ValheimExePath))
                 {
                     // Файл найден! Сохраняем настройки
                     Properties.Settings.Default.Save();
@@ -88,8 +87,18 @@ namespace ValheimFTPSync
 
         private void journalButton_Click(object sender, EventArgs e)
         {
-            JournalForm journalForm = new JournalForm(new BindingList<ServerLogEntry>() { new ServerLogEntry() {DateTimeStartServer = DateTime.Now,NameUser = "zz" }, new ServerLogEntry() { DateTimeStartServer = DateTime.Now, NameUser = "zz" } });
+            JournalForm journalForm = new JournalForm(new BindingList<ServerLogEntry>() { new ServerLogEntry() { DateTimeStartServer = DateTime.Now, NameUser = "zz" }, new ServerLogEntry() { DateTimeStartServer = DateTime.Now, NameUser = "zz" } });
             journalForm.ShowDialog();
+        }
+
+        private void ftpUrlTextBox_TextChanged(object sender, EventArgs e)
+        {
+            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text;
+        }
+
+        private void MainForm_LocationChanged(object sender, EventArgs e)
+        {
+            SettingManager.AppSettingManager.DisplayPostion = this.DesktopLocation;
         }
     }
 }
