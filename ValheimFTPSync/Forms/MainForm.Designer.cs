@@ -37,10 +37,10 @@
             serverArgsButton = new Button();
             startServerButton = new Button();
             serverAppPathBrowserDialog = new FolderBrowserDialog();
-            stopServerButton = new Button();
             journalButton = new Button();
             ftpUrlTextBox = new TextBox();
             pictureBox1 = new PictureBox();
+            ftpSyncProgressBar = new CustomControls.CustomProgressBar();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
@@ -90,6 +90,7 @@
             // 
             // startServerButton
             // 
+            startServerButton.BackgroundImage = Properties.Resources.start_button;
             resources.ApplyResources(startServerButton, "startServerButton");
             startServerButton.Name = "startServerButton";
             startServerButton.UseVisualStyleBackColor = true;
@@ -98,12 +99,6 @@
             // serverAppPathBrowserDialog
             // 
             resources.ApplyResources(serverAppPathBrowserDialog, "serverAppPathBrowserDialog");
-            // 
-            // stopServerButton
-            // 
-            resources.ApplyResources(stopServerButton, "stopServerButton");
-            stopServerButton.Name = "stopServerButton";
-            stopServerButton.UseVisualStyleBackColor = true;
             // 
             // journalButton
             // 
@@ -120,20 +115,29 @@
             // 
             // pictureBox1
             // 
+            resources.ApplyResources(pictureBox1, "pictureBox1");
             pictureBox1.BackColor = Color.Transparent;
             pictureBox1.Image = Properties.Resources.cloud_stop;
-            resources.ApplyResources(pictureBox1, "pictureBox1");
             pictureBox1.Name = "pictureBox1";
             pictureBox1.TabStop = false;
+            // 
+            // ftpSyncProgressBar
+            // 
+            resources.ApplyResources(ftpSyncProgressBar, "ftpSyncProgressBar");
+            ftpSyncProgressBar.BackColor = Color.FromArgb(100, 170, 255, 200);
+            ftpSyncProgressBar.ForeColor = Color.DarkSlateGray;
+            ftpSyncProgressBar.Name = "ftpSyncProgressBar";
+            ftpSyncProgressBar.ProgressColor = Color.LightGreen;
+            ftpSyncProgressBar.Value = 20;
             // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(ftpSyncProgressBar);
             Controls.Add(pictureBox1);
             Controls.Add(ftpUrlTextBox);
             Controls.Add(journalButton);
-            Controls.Add(stopServerButton);
             Controls.Add(startServerButton);
             Controls.Add(serverArgsButton);
             Controls.Add(kzLanguageButton);
@@ -141,9 +145,6 @@
             Controls.Add(russiaLanguageButton);
             Controls.Add(serverAppPathBrowseButton);
             Controls.Add(serverAppPathTextBox);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            MinimizeBox = false;
             Name = "MainForm";
             LocationChanged += MainForm_LocationChanged;
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
@@ -161,9 +162,9 @@
         private Button serverArgsButton;
         private Button startServerButton;
         private FolderBrowserDialog serverAppPathBrowserDialog;
-        private Button stopServerButton;
         private Button journalButton;
         private TextBox ftpUrlTextBox;
         private PictureBox pictureBox1;
+        private CustomControls.CustomProgressBar ftpSyncProgressBar;
     }
 }

@@ -6892,6 +6892,9 @@
   <data name="serverAppPathBrowserDialog.Description" xml:space="preserve">
     <value>Выбор папки сервера</value>
   </data>
+  <data name="ftpUrlTextBox.PlaceholderText" xml:space="preserve">
+    <value>Введите адрес FTP-сервера...</value>
+  </data>
   <data name="$this.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAB4AAAAQ4CAIAAABnsVYUAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO

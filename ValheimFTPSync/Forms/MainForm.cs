@@ -1,5 +1,7 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Resources;
 using ValheimFTPSync.Configuration;
 using ValheimFTPSync.Models;
 
@@ -21,18 +23,20 @@ namespace ValheimFTPSync
             CultureInfo.CurrentUICulture = culture;
 
             // 2. Создаем менеджер ресурсов для текущей формы
-            ComponentResourceManager rm = new ComponentResourceManager(typeof(MainForm));
+            ResourceManager rm = new ResourceManager(typeof(MainForm));
 
-            rm.ApplyResources(serverAppPathBrowserDialog, nameof(serverAppPathBrowserDialog));
+            serverAppPathBrowserDialog.Description = rm.GetString(nameof(serverAppPathBrowserDialog) + ".Description",culture) ?? serverAppPathBrowserDialog.Description;
             // 3. Обновляем строки для каждого элемента управления на форме
             foreach (Control ctrl in this.Controls)
             {
-                rm.ApplyResources(ctrl, ctrl.Name);
+                if(ctrl is TextBox textBox)
+                    textBox.PlaceholderText = rm.GetString(ctrl.Name + "." + nameof(textBox.PlaceholderText), culture);
+                else
+                    ctrl.Text = rm.GetString(ctrl.Name + ".Text", culture);
             }
 
             // 4. Не забываем обновить заголовок самой формы
-            rm.ApplyResources(this, "$this");
-
+            this.Text = rm.GetString("$this.Text");
             // Обновляем подсказки текстбокса.
         }
 
@@ -82,7 +86,7 @@ namespace ValheimFTPSync
 
         private void startServerButton_Click(object sender, EventArgs e)
         {
-
+            //customProgressBar.Value += 10;
         }
 
         private void journalButton_Click(object sender, EventArgs e)

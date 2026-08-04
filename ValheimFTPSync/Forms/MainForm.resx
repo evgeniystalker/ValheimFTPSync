@@ -117,6 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="serverAppPathTextBox.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="serverAppPathTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>373, 37</value>
@@ -143,7 +147,9 @@
   <data name="&gt;&gt;serverAppPathTextBox.ZOrder" xml:space="preserve">
     <value>10</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="serverAppPathBrowseButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
   <data name="serverAppPathBrowseButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
@@ -7487,17 +7493,17 @@
   <data name="&gt;&gt;serverArgsButton.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
+  <data name="startServerButton.BackgroundImageLayout" type="System.Windows.Forms.ImageLayout, System.Windows.Forms">
+    <value>Zoom</value>
+  </data>
   <data name="startServerButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>373, 296</value>
+    <value>679, 95</value>
   </data>
   <data name="startServerButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
   </data>
   <data name="startServerButton.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
-  </data>
-  <data name="startServerButton.Text" xml:space="preserve">
-    <value>Start</value>
   </data>
   <data name="&gt;&gt;startServerButton.Name" xml:space="preserve">
     <value>startServerButton</value>
@@ -7520,37 +7526,10 @@
   <data name="serverAppPathBrowserDialog.UseDescriptionForTitle" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="stopServerButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="stopServerButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>598, 292</value>
-  </data>
-  <data name="stopServerButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>75, 23</value>
-  </data>
-  <data name="stopServerButton.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
-  </data>
-  <data name="stopServerButton.Text" xml:space="preserve">
-    <value>Stop</value>
-  </data>
-  <data name="&gt;&gt;stopServerButton.Name" xml:space="preserve">
-    <value>stopServerButton</value>
-  </data>
-  <data name="&gt;&gt;stopServerButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;stopServerButton.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;stopServerButton.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
   <data name="journalButton.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vgAADr4B6kKxwAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAADclSURBVHhe7d0H
+        vAAADrwBlbxySQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAADclSURBVHhe7d0H
         lBRVvsfxnWEGEMkKZgVEDIAPMaMoxhVdFERRFyPmiHFFQMDFvOhiTpgwEUSJEgYzSTIioAQVUUFyMuw+
         3953b78ZX/fMv6a7q+t23+r6/s75nD1nVai+VdX317erq/4UghRrbbQe2pvabG2NtlVT2hZttTZLe0O7
         UztaK9IIIYQQEqIUaCdqL2tmgjcTfbo2ay9q7TRCCCGEOJxC7QJtviZN6n7N1bpoplgQQgghxKG00qZp
@@ -7814,7 +7793,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;journalButton.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
+  </data>
+  <data name="ftpUrlTextBox.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
   </data>
   <data name="ftpUrlTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>373, 66</value>
@@ -7838,10 +7820,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ftpUrlTextBox.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
+  </data>
+  <data name="pictureBox1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
   </data>
   <data name="pictureBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>679, 65</value>
+    <value>679, 66</value>
   </data>
   <data name="pictureBox1.Size" type="System.Drawing.Size, System.Drawing">
     <value>23, 23</value>
@@ -7862,6 +7847,36 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pictureBox1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ftpSyncProgressBar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="ftpSyncProgressBar.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Segoe UI, 9pt</value>
+  </data>
+  <data name="ftpSyncProgressBar.Location" type="System.Drawing.Point, System.Drawing">
+    <value>373, 95</value>
+  </data>
+  <data name="ftpSyncProgressBar.Size" type="System.Drawing.Size, System.Drawing">
+    <value>300, 23</value>
+  </data>
+  <data name="ftpSyncProgressBar.TabIndex" type="System.Int32, mscorlib">
+    <value>13</value>
+  </data>
+  <data name="ftpSyncProgressBar.Text" xml:space="preserve">
+    <value>Файл: Valheim.smdf</value>
+  </data>
+  <data name="&gt;&gt;ftpSyncProgressBar.Name" xml:space="preserve">
+    <value>ftpSyncProgressBar</value>
+  </data>
+  <data name="&gt;&gt;ftpSyncProgressBar.Type" xml:space="preserve">
+    <value>CustomControls.CustomProgressBar, ValheimFTPSync, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;ftpSyncProgressBar.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ftpSyncProgressBar.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
