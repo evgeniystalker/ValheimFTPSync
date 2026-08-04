@@ -1,26 +1,54 @@
 ﻿using System.ComponentModel;
-using System.Windows.Forms;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CustomControls
 {
     public class CustomProgressBar : ProgressBar
     {
-        private string _text = string.Empty;
+        private static readonly Color s_defaultForeColor = Color.Black;
+
+        [Description("Text on ProgressBar")]
         [Category("Additional Options"), Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        public string CustomText
+        [AllowNull]
+        public override string Text
         {
             get
             {
-                return _text;
+                return base.Text;
             }
             set
             {
-                _text = value;
+                base.Text = value;
                 Invalidate();//redraw component after change value from VS Properties section
             }
         }
-        private SolidBrush _progressColourBrush = (SolidBrush)Brushes.LightGreen;
+        private SolidBrush _progressBrush = (SolidBrush)Brushes.LightGreen;
+        private SolidBrush _fontBrush = new SolidBrush(DefaultForeColor);
+
+        public override Color ForeColor
+        {
+            get
+            {
+                return _fontBrush.Color;
+            }
+            set
+            {
+                _fontBrush.Dispose();
+                _fontBrush = new SolidBrush(value);
+            }
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override void ResetForeColor()
+        {
+            ForeColor = s_defaultForeColor;
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        internal bool ShouldSerializeForeColor()
+        {
+            return ForeColor != s_defaultForeColor;
+        }
 
         [Category("Additional Options"), Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
@@ -28,40 +56,31 @@ namespace CustomControls
         {
             get
             {
-                return _progressColourBrush.Color;
+                return _progressBrush.Color;
             }
             set
             {
-                _progressColourBrush.Dispose();
-                _progressColourBrush = new SolidBrush(value);
+                _progressBrush.Dispose();
+                _progressBrush = new SolidBrush(value);
             }
         }
-        [Description("Font of the text on ProgressBar"), Category("Additional Options")]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        public Font TextFont { get; set; } = DefaultFont;
-
-        private SolidBrush _textColourBrush = (SolidBrush)Brushes.Black;
-        [Category("Additional Options")]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        public Color TextColor
+        [Category("Additional Options"), Description("Font of the text on ProgressBar")]
+        [Browsable(true)]
+        [EditorBrowsable(EditorBrowsableState.Always)]
+        [AllowNull]
+        public override Font Font
         {
-            get
-            {
-                return _textColourBrush.Color;
-            }
-            set
-            {
-                _textColourBrush.Dispose();
-                _textColourBrush = new SolidBrush(value);
-            }
+            get => base.Font;
+            set => base.Font = value;
         }
 
         public CustomProgressBar() : base()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+            ForeColor = s_defaultForeColor;
         }
 
-        protected override void  OnPaint(PaintEventArgs e)
+        protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
@@ -74,18 +93,16 @@ namespace CustomControls
             if (Value > 0)
             {
                 Rectangle clip = new Rectangle(rect.X, rect.Y, (int)Math.Round(((float)Value / Maximum) * rect.Width), rect.Height);
-
-                e.Graphics.FillRectangle(_progressColourBrush, clip);
+                e.Graphics.FillRectangle(_progressBrush, clip);
             }
-            SizeF len = e.Graphics.MeasureString(CustomText, TextFont);
+            SizeF len = e.Graphics.MeasureString(Text, Font);
+            e.Graphics.DrawString(Text, Font, _fontBrush, new PointF(10, this.Height / 2 - 8));
 
-            e.Graphics.DrawString(CustomText , TextFont, _textColourBrush, new PointF(10, this.Height / 2  - 8 ));
-           
         }
         public new void Dispose()
-        { 
-            _textColourBrush.Dispose();
-            _progressColourBrush.Dispose();
+        {
+            _fontBrush.Dispose();
+            _progressBrush.Dispose();
             base.Dispose();
         }
     }
