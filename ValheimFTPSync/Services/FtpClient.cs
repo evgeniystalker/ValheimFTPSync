@@ -61,26 +61,29 @@ namespace ValheimFTPSync.Services
         /// <summary>
         /// Пытается подключиться к FTP и возвращает пользовательское сообщение о результате.
         /// </summary>
-        public string TryConnect()
+        public bool TryConnect()
         {
             try
             {
                 if (GetResponseList(Url.OriginalString) != null)
                 {
-                    Logger.
-                    return "Проверка успешна!";
+                    Logger?.Info("Проверка успешна!");
+                    return true;
                 }
                 else
-                    return "Ошибка подключения к ftp...";
+                {
+                    Logger?.Warning("Ошибка подключения к ftp...");
+                    return false;
+                }
             }
             catch (WebException wEx)
             {
                 if (wEx.Response is FtpWebResponse ftpEx && ftpEx.StatusCode == FtpStatusCode.NotLoggedIn)
-                {
-                    return "Неверный логин или пароль!";
-                }
+                    Logger?.Info("Неверный логин или пароль!");
+
                 else
-                    return "Ошибка подключения к ftp..." + wEx.Message;
+                    Logger?.Info("Ошибка подключения к ftp..." + wEx.Message);
+                return false;
             }
         }
         private DateTime GetDate(string url)
@@ -246,7 +249,7 @@ namespace ValheimFTPSync.Services
                     throw new OperationCanceledException("Отмена операции");
                 }
             }
-
+            
             FtpWebRequest ftpWeb = FtpWebRequest.Create(fileNameUri) as FtpWebRequest;
             ftpWeb.Method = WebRequestMethods.Ftp.DownloadFile;
 
@@ -347,6 +350,8 @@ namespace ValheimFTPSync.Services
 
         private void CreateDirectoryFtp(string directoryPath)
         {
+            List<object> u = new List<object>();
+            u = new List<string>();
             try
             {
                 FtpWebRequest ftpWeb = FtpWebRequest.Create(directoryPath) as FtpWebRequest;
@@ -439,33 +444,33 @@ namespace ValheimFTPSync.Services
                     ct.ThrowIfCancellationRequested();
             }
         }
-        /// <summary>
-        /// Удаляет все файлы и каталоги во временной локальной папке.
-        /// </summary>
-        public async Task DeleteLocalFiles(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken ct)
-        {
-            List<string> TempDirectory = Directory.GetDirectories(pathTempDirectory, "*", SearchOption.AllDirectories).ToList();
-            List<string> filesInTempDirectory = Directory.GetFiles(pathTempDirectory, "", SearchOption.AllDirectories).ToList();
+        ///// <summary>
+        ///// Удаляет все файлы и каталоги во временной локальной папке.
+        ///// </summary>
+        //public async Task DeleteLocalFiles(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken ct)
+        //{
+        //    List<string> TempDirectory = Directory.GetDirectories(pathTempDirectory, "*", SearchOption.AllDirectories).ToList();
+        //    List<string> filesInTempDirectory = Directory.GetFiles(pathTempDirectory, "", SearchOption.AllDirectories).ToList();
 
-            if (ct.IsCancellationRequested)
-                ct.ThrowIfCancellationRequested();
-            int count = 0;
+        //    if (ct.IsCancellationRequested)
+        //        ct.ThrowIfCancellationRequested();
+        //    int count = 0;
 
-            foreach (var file in filesInTempDirectory)
-            {
-                await Task.Run(() => File.Delete(file));
-                progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetFileName(file), 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
-            }
+        //    foreach (var file in filesInTempDirectory)
+        //    {
+        //        await Task.Run(() => File.Delete(file));
+        //        progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetFileName(file), 1));
+        //        if (ct.IsCancellationRequested)
+        //            ct.ThrowIfCancellationRequested();
+        //    }
 
-            foreach (var dir in TempDirectory)
-            {
-                await Task.Run(() => Directory.Delete(dir));
-                progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetDirectoryName(dir), 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
-            }
-        }
+        //    foreach (var dir in TempDirectory)
+        //    {
+        //        await Task.Run(() => Directory.Delete(dir));
+        //        progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetDirectoryName(dir), 1));
+        //        if (ct.IsCancellationRequested)
+        //            ct.ThrowIfCancellationRequested();
+        //    }
+        //}
     }
 }
