@@ -39,9 +39,10 @@
             serverAppPathBrowserDialog = new FolderBrowserDialog();
             journalButton = new Button();
             ftpUrlTextBox = new TextBox();
-            pictureBox1 = new PictureBox();
+            connectStatusPictureBox = new PictureBox();
             ftpSyncProgressBar = new CustomControls.CustomProgressBar();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            loggerRichTextBox = new RichTextBox();
+            ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
             // serverAppPathTextBox
@@ -113,13 +114,13 @@
             ftpUrlTextBox.Name = "ftpUrlTextBox";
             ftpUrlTextBox.TextChanged += ftpUrlTextBox_TextChanged;
             // 
-            // pictureBox1
+            // connectStatusPictureBox
             // 
-            resources.ApplyResources(pictureBox1, "pictureBox1");
-            pictureBox1.BackColor = Color.Transparent;
-            pictureBox1.Image = Properties.Resources.cloud_stop;
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.TabStop = false;
+            resources.ApplyResources(connectStatusPictureBox, "connectStatusPictureBox");
+            connectStatusPictureBox.BackColor = Color.Transparent;
+            connectStatusPictureBox.Image = Properties.Resources.cloud_stop;
+            connectStatusPictureBox.Name = "connectStatusPictureBox";
+            connectStatusPictureBox.TabStop = false;
             // 
             // ftpSyncProgressBar
             // 
@@ -130,12 +131,18 @@
             ftpSyncProgressBar.ProgressColor = Color.LightGreen;
             ftpSyncProgressBar.Value = 20;
             // 
+            // loggerRichTextBox
+            // 
+            resources.ApplyResources(loggerRichTextBox, "loggerRichTextBox");
+            loggerRichTextBox.Name = "loggerRichTextBox";
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(loggerRichTextBox);
             Controls.Add(ftpSyncProgressBar);
-            Controls.Add(pictureBox1);
+            Controls.Add(connectStatusPictureBox);
             Controls.Add(ftpUrlTextBox);
             Controls.Add(journalButton);
             Controls.Add(startServerButton);
@@ -147,7 +154,7 @@
             Controls.Add(serverAppPathTextBox);
             Name = "MainForm";
             LocationChanged += MainForm_LocationChanged;
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -164,7 +171,8 @@
         private FolderBrowserDialog serverAppPathBrowserDialog;
         private Button journalButton;
         private TextBox ftpUrlTextBox;
-        private PictureBox pictureBox1;
+        private PictureBox connectStatusPictureBox;
         private CustomControls.CustomProgressBar ftpSyncProgressBar;
+        private RichTextBox loggerRichTextBox;
     }
 }

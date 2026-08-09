@@ -4,16 +4,23 @@ using System.Globalization;
 using System.Resources;
 using ValheimFTPSync.Configuration;
 using ValheimFTPSync.Models;
+using ValheimFTPSync.Services;
+using ValheimFTPSync.Services.Interfaces;
 
 namespace ValheimFTPSync
 {
     public partial class MainForm : Form
     {
         private AppGlobalSettingManager SettingManager { get; set; }
+        private FtpService FtpService { get; set; }
+        private IAppLogger Logger { get; set; }
+
         public MainForm()
         {
             InitializeComponent();
             SettingManager = new AppGlobalSettingManager();
+            Logger = new RichTextBoxLogger(loggerRichTextBox);
+            FtpService = new FtpService(Logger);
         }
 
         private void ChangeLanguage(string langCode)
@@ -56,7 +63,7 @@ namespace ValheimFTPSync
                 if (File.Exists(SettingManager.AppSettingManager.ValheimExePath))
                 {
                     // Файл найден! Сохраняем настройки
-                    Properties.Settings.Default.Save();
+                    SettingManager.AppSettingManager.Save();
                 }
             }
         }
@@ -95,9 +102,16 @@ namespace ValheimFTPSync
             journalForm.ShowDialog();
         }
 
-        private void ftpUrlTextBox_TextChanged(object sender, EventArgs e)
+        private async void ftpUrlTextBox_TextChanged(object sender, EventArgs e)
         {
             SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text;
+            connectStatusPictureBox.Image = Properties.Resources.cloud_load;
+            FtpService.SetUri(ftpUrlTextBox.Text);
+            var isConnect = await FtpService.TryConnectAsync();
+            if (isConnect)
+                connectStatusPictureBox.Image = Properties.Resources.cloud_check;
+            else
+                connectStatusPictureBox.Image = Properties.Resources.cloud_remove;
         }
 
         private void MainForm_LocationChanged(object sender, EventArgs e)

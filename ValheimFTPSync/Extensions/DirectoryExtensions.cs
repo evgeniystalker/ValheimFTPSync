@@ -7,7 +7,7 @@ namespace ValheimFTPSync.Extensions
 {
     internal static class DirectoryExtensions
     {
-        static List<FileModel> GetFilesInDirectoryRecursive(this DirectoryModel dir)
+        public static List<FileModel> GetFilesInDirectoryRecursive(this DirectoryModel dir)
         {
             List<FileModel> files = new List<FileModel>();
             files.AddRange(dir.Files);

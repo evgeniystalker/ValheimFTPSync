@@ -145,7 +145,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;serverAppPathTextBox.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>11</value>
   </data>
   <data name="serverAppPathBrowseButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -175,7 +175,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;serverAppPathBrowseButton.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>10</value>
   </data>
   <data name="russiaLanguageButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Right</value>
@@ -2906,7 +2906,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;russiaLanguageButton.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="usLanguageButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Right</value>
@@ -4745,7 +4745,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;usLanguageButton.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>8</value>
   </data>
   <data name="kzLanguageButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Right</value>
@@ -7039,7 +7039,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;kzLanguageButton.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="serverArgsButton.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -7491,7 +7491,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;serverArgsButton.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="startServerButton.BackgroundImageLayout" type="System.Windows.Forms.ImageLayout, System.Windows.Forms">
     <value>Zoom</value>
@@ -7515,7 +7515,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;startServerButton.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <metadata name="serverAppPathBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -7793,7 +7793,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;journalButton.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="ftpUrlTextBox.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -7820,34 +7820,34 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ftpUrlTextBox.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
-  <data name="pictureBox1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+  <data name="connectStatusPictureBox.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
-  <data name="pictureBox1.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="connectStatusPictureBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>679, 66</value>
   </data>
-  <data name="pictureBox1.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="connectStatusPictureBox.Size" type="System.Drawing.Size, System.Drawing">
     <value>23, 23</value>
   </data>
-  <data name="pictureBox1.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
+  <data name="connectStatusPictureBox.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
     <value>Zoom</value>
   </data>
-  <data name="pictureBox1.TabIndex" type="System.Int32, mscorlib">
+  <data name="connectStatusPictureBox.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
   </data>
-  <data name="&gt;&gt;pictureBox1.Name" xml:space="preserve">
-    <value>pictureBox1</value>
+  <data name="&gt;&gt;connectStatusPictureBox.Name" xml:space="preserve">
+    <value>connectStatusPictureBox</value>
   </data>
-  <data name="&gt;&gt;pictureBox1.Type" xml:space="preserve">
+  <data name="&gt;&gt;connectStatusPictureBox.Type" xml:space="preserve">
     <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;pictureBox1.Parent" xml:space="preserve">
+  <data name="&gt;&gt;connectStatusPictureBox.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;pictureBox1.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="&gt;&gt;connectStatusPictureBox.ZOrder" xml:space="preserve">
+    <value>2</value>
   </data>
   <data name="ftpSyncProgressBar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -7877,6 +7877,33 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ftpSyncProgressBar.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="loggerRichTextBox.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left, Right</value>
+  </data>
+  <data name="loggerRichTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>28, 204</value>
+  </data>
+  <data name="loggerRichTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>336, 127</value>
+  </data>
+  <data name="loggerRichTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="loggerRichTextBox.Text" xml:space="preserve">
+    <value />
+  </data>
+  <data name="&gt;&gt;loggerRichTextBox.Name" xml:space="preserve">
+    <value>loggerRichTextBox</value>
+  </data>
+  <data name="&gt;&gt;loggerRichTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;loggerRichTextBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;loggerRichTextBox.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

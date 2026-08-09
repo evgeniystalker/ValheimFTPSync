@@ -6,16 +6,23 @@ namespace ValheimFTPSync.Models
 {
     internal class ProgressEventArgs
     {
-        public double ProgressPercent { get; }
+        public int Percent { get; }
         public long BytesTransferred { get; }
         public long TotalBytes { get; }
-        public string Status { get; }
-        public ProgressEventArgs(double progressPercent, long bytesTransferred, long totalBytes, string status)
+        public Operation Operation { get; } // "Upload" или "Download"
+        public double Speed { get; set; }
+
+        public ProgressEventArgs(int percent, long bytesTransferred, long totalBytes, Operation operation)
         {
-            ProgressPercent = progressPercent;
+            Percent = percent;
             BytesTransferred = bytesTransferred;
             TotalBytes = totalBytes;
-            Status = status;
+            Operation = operation;
         }
+    }
+    internal enum Operation
+    {
+        Upload,
+        Download,
     }
 }
