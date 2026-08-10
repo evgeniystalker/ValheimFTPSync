@@ -42,6 +42,7 @@
             connectStatusPictureBox = new PictureBox();
             ftpSyncProgressBar = new CustomControls.CustomProgressBar();
             loggerRichTextBox = new RichTextBox();
+            consoleButton = new Button();
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
@@ -112,7 +113,7 @@
             // 
             resources.ApplyResources(ftpUrlTextBox, "ftpUrlTextBox");
             ftpUrlTextBox.Name = "ftpUrlTextBox";
-            ftpUrlTextBox.TextChanged += ftpUrlTextBox_TextChanged;
+            ftpUrlTextBox.TextChanged += FtpUrlTextBox_TextChanged;
             // 
             // connectStatusPictureBox
             // 
@@ -135,12 +136,21 @@
             // 
             resources.ApplyResources(loggerRichTextBox, "loggerRichTextBox");
             loggerRichTextBox.Name = "loggerRichTextBox";
+            loggerRichTextBox.ReadOnly = true;
+            // 
+            // consoleButton
+            // 
+            consoleButton.BackgroundImage = Properties.Resources.consoleRight;
+            resources.ApplyResources(consoleButton, "consoleButton");
+            consoleButton.Name = "consoleButton";
+            consoleButton.UseVisualStyleBackColor = true;
+            consoleButton.Click += consoleButton_Click;
             // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
-            Controls.Add(loggerRichTextBox);
+            Controls.Add(consoleButton);
             Controls.Add(ftpSyncProgressBar);
             Controls.Add(connectStatusPictureBox);
             Controls.Add(ftpUrlTextBox);
@@ -152,6 +162,7 @@
             Controls.Add(russiaLanguageButton);
             Controls.Add(serverAppPathBrowseButton);
             Controls.Add(serverAppPathTextBox);
+            Controls.Add(loggerRichTextBox);
             Name = "MainForm";
             LocationChanged += MainForm_LocationChanged;
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
@@ -174,5 +185,6 @@
         private PictureBox connectStatusPictureBox;
         private CustomControls.CustomProgressBar ftpSyncProgressBar;
         private RichTextBox loggerRichTextBox;
+        private Button consoleButton;
     }
 }

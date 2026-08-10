@@ -7,7 +7,9 @@ namespace ValheimFTPSync.Services
 {
     internal class RichTextBoxLogger : IAppLogger
     {
-        RichTextBox richTextBox;
+        private RichTextBox _richTextBox;
+
+        bool HasText => _richTextBox.TextLength > 0;
 
         private const string _debug = "Debug: ";
         private const string _error = "Error: ";
@@ -16,7 +18,7 @@ namespace ValheimFTPSync.Services
 
         public RichTextBoxLogger(RichTextBox richTextBox)
         {
-            this.richTextBox = richTextBox;
+            this._richTextBox = richTextBox;
         }
 
 
@@ -32,7 +34,7 @@ namespace ValheimFTPSync.Services
 
         public void Info(string message)
         {
-            Log(_info, message, richTextBox.SelectionColor);
+            Log(_info, message, _richTextBox.SelectionColor);
         }
 
         public void Warning(string message)
@@ -40,21 +42,32 @@ namespace ValheimFTPSync.Services
             Log(_warning, message, Color.Orange);
         }
 
-        private void Log(string logMessage , string message, Color color) {
-
-            Color oldColor;
-            if (color != richTextBox.SelectionColor)
+        private void AppendText(string logMessage, string message, Color color)
+        {
+            if (HasText)
             {
-                oldColor = richTextBox.SelectionColor;
-                richTextBox.SelectionColor = color;
-                richTextBox.AppendText(logMessage + message + Environment.NewLine);
-                richTextBox.SelectionColor = oldColor;
+                _richTextBox.AppendText(Environment.NewLine);
+            }
+            Color oldColor;
+            if (color != _richTextBox.SelectionColor)
+            {
+                oldColor = _richTextBox.SelectionColor;
+                _richTextBox.SelectionColor = color;
+                _richTextBox.AppendText(logMessage + message);
+                _richTextBox.SelectionColor = oldColor;
             }
             else
             {
-                richTextBox.AppendText(logMessage + message + Environment.NewLine);
+                _richTextBox.AppendText(logMessage + message);
             }
-            richTextBox.ScrollToCaret();
+            _richTextBox.ScrollToCaret();
+        }
+        private void Log(string logMessage, string message, Color color)
+        {
+            if (_richTextBox.InvokeRequired)
+                _richTextBox.BeginInvoke(AppendText, logMessage, message, color);
+            else
+                AppendText(logMessage, message, color);
         }
     }
 }

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Resources;
+using System.Timers;
 using ValheimFTPSync.Configuration;
 using ValheimFTPSync.Models;
 using ValheimFTPSync.Services;
@@ -18,6 +19,7 @@ namespace ValheimFTPSync
         public MainForm()
         {
             InitializeComponent();
+            InitializeTimer();
             SettingManager = new AppGlobalSettingManager();
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             FtpService = new FtpService(Logger);
@@ -32,11 +34,11 @@ namespace ValheimFTPSync
             // 2. Создаем менеджер ресурсов для текущей формы
             ResourceManager rm = new ResourceManager(typeof(MainForm));
 
-            serverAppPathBrowserDialog.Description = rm.GetString(nameof(serverAppPathBrowserDialog) + ".Description",culture) ?? serverAppPathBrowserDialog.Description;
+            serverAppPathBrowserDialog.Description = rm.GetString(nameof(serverAppPathBrowserDialog) + ".Description", culture) ?? serverAppPathBrowserDialog.Description;
             // 3. Обновляем строки для каждого элемента управления на форме
             foreach (Control ctrl in this.Controls)
             {
-                if(ctrl is TextBox textBox)
+                if (ctrl is TextBox textBox)
                     textBox.PlaceholderText = rm.GetString(ctrl.Name + "." + nameof(textBox.PlaceholderText), culture);
                 else
                     ctrl.Text = rm.GetString(ctrl.Name + ".Text", culture);
@@ -102,21 +104,45 @@ namespace ValheimFTPSync
             journalForm.ShowDialog();
         }
 
-        private async void ftpUrlTextBox_TextChanged(object sender, EventArgs e)
+        private System.Timers.Timer debounceTimer;
+
+        private void InitializeTimer()
         {
-            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text;
-            connectStatusPictureBox.Image = Properties.Resources.cloud_load;
+            debounceTimer = new System.Timers.Timer(1000);
+            debounceTimer.AutoReset = false;
+            debounceTimer.Elapsed += FtpUrlCheckConnect;
+        }
+
+        private async void FtpUrlCheckConnect(object? sender, ElapsedEventArgs e)
+        {
             FtpService.SetUri(ftpUrlTextBox.Text);
             var isConnect = await FtpService.TryConnectAsync();
-            if (isConnect)
-                connectStatusPictureBox.Image = Properties.Resources.cloud_check;
-            else
-                connectStatusPictureBox.Image = Properties.Resources.cloud_remove;
+            Invoke(new Action(() =>
+            {
+                if (isConnect)
+                    connectStatusPictureBox.Image = Properties.Resources.cloud_check;
+                else
+                    connectStatusPictureBox.Image = Properties.Resources.cloud_remove;
+            }));
+        }
+
+        private async void FtpUrlTextBox_TextChanged(object sender, EventArgs e)
+        {
+            debounceTimer.Stop();
+            debounceTimer.Start();
+            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text;
+            connectStatusPictureBox.Image = Properties.Resources.cloud_load;
         }
 
         private void MainForm_LocationChanged(object sender, EventArgs e)
         {
             SettingManager.AppSettingManager.DisplayPostion = this.DesktopLocation;
+        }
+
+        private void consoleButton_Click(object sender, EventArgs e)
+        {
+            loggerRichTextBox.Visible = !loggerRichTextBox.Visible;
+            consoleButton.BackgroundImage = loggerRichTextBox.Visible ? Properties.Resources.consoleLeft : Properties.Resources.consoleRight;
         }
     }
 }

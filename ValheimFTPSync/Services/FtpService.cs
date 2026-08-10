@@ -10,13 +10,13 @@ namespace ValheimFTPSync.Services
 {
     internal class FtpService
     {
-        private Uri? _url;
-        public Uri? Url
+        private Uri? _uri;
+        public Uri? Uri
         {
-            get => _url;
+            get => _uri;
             private set
             {
-                _url = value;
+                _uri = value;
             }
         }
 
@@ -55,18 +55,25 @@ namespace ValheimFTPSync.Services
         public void SetUri(string uri)
         {
             if (string.IsNullOrEmpty(uri))
-                Logger.Warning("Can't create FtpClient, uri is null.");
+            {
+                Logger.Warning("Cannot set URI: the value is null.");
+                return;
+            }
             if (!CheckFtpUrl(uri))
-                Logger.Warning($"{uri} is not valid");
+            { 
+                Logger.Warning($"URI: \"{uri}\" is not valid.");
+                return;
+            }
 
             Uri? tryUri;
-            if (!Uri.TryCreate(uri, UriKind.Absolute, out tryUri) && tryUri is not null)
-            { 
-                Url = tryUri;
-                FtpClient = new FtpClient(Url);
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out tryUri) && tryUri is null)
+            {
+                Logger.Warning($"Can't create URI: \"{uri}\".");
+                return;
             }
-            else
-                Logger.Warning($"Can't create Uri: \"{uri}\".");
+            Uri = tryUri;
+            FtpClient = new FtpClient(Uri);
+
         }
 
         public delegate void DateTimeHandler(DateTime lastDateChanging);
@@ -143,7 +150,7 @@ namespace ValheimFTPSync.Services
                 {
                     if (objectDet.EndsWith(Path.GetFileName(@object)))
                     {
-                        string objectUrl = new Uri(Url, @object).ToString();
+                        string objectUrl = new Uri(Uri, @object).ToString();
                         if (objectDet.StartsWith('d'))
                         {
                             dir.Directories.Add(LoadDirectoryModel(objectUrl));
@@ -168,7 +175,7 @@ namespace ValheimFTPSync.Services
         {
             if (ct.IsCancellationRequested)
                 ct.ThrowIfCancellationRequested();
-            dirModel = LoadDirectoryModel(Url.OriginalString);
+            dirModel = LoadDirectoryModel(Uri.OriginalString);
             List<FileModel> filesAll = dirModel.GetFilesInDirectoryRecursive();
             filesAll = filesAll.Where(x => x.FileName != "StatusServer.json").ToList();
             DateTimeChanged.Invoke(filesAll.Select(x => x.DateTimeChangedFile).Max());
@@ -221,7 +228,7 @@ namespace ValheimFTPSync.Services
         public void GetFileFtp(FileModel file, string pathSave, IProgress<float> progressOneFile)
         {
             Uri fileNameUri = new Uri(file.FilePath);
-            var tempPath = Path.Combine(pathSave, Url.MakeRelativeUri(fileNameUri).ToString().Replace("/", "\\"));
+            var tempPath = Path.Combine(pathSave, Uri.MakeRelativeUri(fileNameUri).ToString().Replace("/", "\\"));
             var directoryName = Path.GetDirectoryName(tempPath);
 
             if (!Directory.Exists(directoryName))
@@ -322,8 +329,8 @@ namespace ValheimFTPSync.Services
             //FTPLISTS
             //List<string> filesAll = DirectoryModel.GetFilesInDirectoryRecursive(ListFiles);
             //List<string> directories = DirectoryModel.GetDirectoryRecursive(ListFiles);
-            var directories = TempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Url, x).OriginalString).ToList();
-            var filesAll = filesInTempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Url, x).OriginalString).ToList();
+            var directories = TempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Uri, x).OriginalString).ToList();
+            var filesAll = filesInTempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Uri, x).OriginalString).ToList();
 
             if (token.IsCancellationRequested)
                 token.ThrowIfCancellationRequested();
@@ -346,7 +353,7 @@ namespace ValheimFTPSync.Services
                     token.ThrowIfCancellationRequested();
                 fileName = Path.GetFileName(file);
                 Uri fileNameUri = new Uri(file);
-                var tempPath = Path.Combine(pathTempDirectory, Url.MakeRelativeUri(fileNameUri).ToString());
+                var tempPath = Path.Combine(pathTempDirectory, Uri.MakeRelativeUri(fileNameUri).ToString());
                 if (!File.Exists(tempPath))
                     throw new Exception("Не найден файл " + tempPath);
                 await Task.Run(() => UploadFileFtp(tempPath, fileNameUri, progressOneFileUploading));
@@ -414,7 +421,7 @@ namespace ValheimFTPSync.Services
         {
             if (ct.IsCancellationRequested)
                 ct.ThrowIfCancellationRequested();
-            dirModel = LoadDirectoryModel(Url.OriginalString);
+            dirModel = LoadDirectoryModel(Uri.OriginalString);
             List<FileModel> filesAll = dirModel.GetFilesInDirectoryRecursive();
             List<DirectoryModel> dirAll = dirModel.GetDirectoryRecursive();
             DateTimeChanged.Invoke(filesAll.Select(x => x.DateTimeChangedFile).Max());

@@ -9,7 +9,7 @@ using ValheimFTPSync.Services.Interfaces;
 
 namespace ValheimFTPSync.Services
 {
-    internal class FtpClient : IFtpClient
+    internal class FtpClient : IFtpClient, IFtpClientAsync
     {
         private Uri _ftpUri;
 
@@ -70,17 +70,17 @@ namespace ValheimFTPSync.Services
                 return false;
             }
         }
-
         internal async Task<bool> TryConnectAsync()
         {
             return await this.ListDirectoryAsync() != null;
         }
 
-        private DateTime GetDate(string url)
+        public DateTime GetDateTimeStamp(string absolutePath)
         {
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(url) as FtpWebRequest;
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
+#pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.GetDateTimestamp;
-
             try
             {
                 using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
@@ -97,9 +97,16 @@ namespace ValheimFTPSync.Services
             }
         }
 
-        private long GetFileSize(string url)
+        public Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken ct = default)
         {
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(url) as FtpWebRequest;
+            throw new NotImplementedException();
+        }
+
+        public long GetFileSize(string absolutePath)
+        {
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+#pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.GetFileSize;
             try
             {
@@ -117,29 +124,37 @@ namespace ValheimFTPSync.Services
             }
         }
 
-        public void AppendFile(string uri, CancellationToken ct = default)
+        public Task<long> GetFileSizeAsync(string absolutePath, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void DeleteFile(string uri, CancellationToken ct = default)
+        public void AppendFile(string absolutePath, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task DeleteFileAsync(string uri, CancellationToken ct = default)
+        public Task AppendFileAsync(string absolutePath, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void DownloadFile(string uri, Stream stream, CancellationToken ct = default)
+        public void DeleteFile(string absolutePath, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeleteFileAsync(string absolutePath, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DownloadFile(string absolutePath, Stream stream, CancellationToken ct = default)
         {
 
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(uri) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (ftpWeb == null)
-                throw new InvalidOperationException("FtpWebRequest cannot be created");
             ftpWeb.Method = WebRequestMethods.Ftp.DownloadFile;
             ftpWeb.UseBinary = true;
             ftpWeb.ConnectionGroupName = "DownloadFTP";
@@ -184,17 +199,7 @@ namespace ValheimFTPSync.Services
             }
         }
 
-        public Task DownloadFileAsync(string uri, Stream stream, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public DateTime GetDateTimestamp()
-        {
-            throw new NotImplementedException();
-        }
-
-        public float GetSizeFile()
+        public Task DownloadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -204,13 +209,11 @@ namespace ValheimFTPSync.Services
             return ListDirectory("/");
         }
 
-        public IList<string> ListDirectory(string directoryPath)
+        public IList<string> ListDirectory(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, directoryPath)) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (ftpWeb == null)
-                throw new InvalidOperationException("It is not possible to create an Ftp connection. Invalid link.");
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
 
@@ -230,13 +233,11 @@ namespace ValheimFTPSync.Services
             return ListDirectoryDetails("/");
         }
 
-        public IList<string> ListDirectoryDetails(string directoryPath)
+        public IList<string> ListDirectoryDetails(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, directoryPath)) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (ftpWeb == null)
-                throw new InvalidOperationException("It is not possible to create an Ftp connection. Invalid link.");
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
 
@@ -256,13 +257,11 @@ namespace ValheimFTPSync.Services
             return await ListDirectoryAsync("/");
         }
 
-        public async Task<IList<string>> ListDirectoryAsync(string directoryPath)
+        public async Task<IList<string>> ListDirectoryAsync(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, directoryPath)) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (ftpWeb == null)
-                throw new InvalidOperationException("It is not possible to create an Ftp connection. Invalid link.");
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
 
@@ -282,13 +281,11 @@ namespace ValheimFTPSync.Services
             return await ListDirectoryDetailsAsync("/");
         }
 
-        public async Task<IList<string>> ListDirectoryDetailsAsync(string directoryPath)
+        public async Task<IList<string>> ListDirectoryDetailsAsync(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, directoryPath)) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (ftpWeb == null)
-                throw new InvalidOperationException("It is not possible to create an Ftp connection. Invalid link.");
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
 
@@ -303,58 +300,81 @@ namespace ValheimFTPSync.Services
             return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 
-        public void MakeDirectory(string directoryPath, CancellationToken ct = default)
+        public void MakeDirectory(string absolutePath, CancellationToken ct = default)
         {
-            try
-            {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-                FtpWebRequest? ftpWeb = FtpWebRequest.Create(directoryPath) as FtpWebRequest;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-                if (ftpWeb == null)
-                    throw new InvalidOperationException("FtpWebRequest cannot be created.");
-                ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
-                ftpWeb.GetResponse();
-            }
-            catch (WebException wEx)
+            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
+            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
+            if (response is null)
+                throw new WebException("Response status is invalid.");
+        }
+
+        public async Task MakeDirectoryAsync(string absolutePath, CancellationToken ct = default)
+        {
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+#pragma warning restore SYSLIB0014 // Тип или член устарел
+            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
+            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
+            if (response is null)
+                throw new WebException("Response status is invalid.");
+        }
+
+        public void RemoveDirectory(string absolutePath, CancellationToken ct = default)
+        {
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+#pragma warning restore SYSLIB0014 // Тип или член устарел
+            ftpWeb.Method = WebRequestMethods.Ftp.RemoveDirectory;
+            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
+            if (response is null)
+                throw new WebException("Response status is invalid.");
+
+            if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
             {
-                if (!wEx.Message.Contains("550"))
-                    throw;
+                throw new Exception($"Error delete file \"{absolutePath}\".");
             }
+            response.Close();
         }
 
-        public Task MakeDirectoryAsync(string DirectoryPath, CancellationToken ct = default)
+        public async Task RemoveDirectoryAsync(string absolutePath, CancellationToken ct = default)
+        {
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+#pragma warning restore SYSLIB0014 // Тип или член устарел
+            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
+            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
+            if (response is null)
+                throw new WebException("Response status is invalid.");
+            
+            if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
+            {
+                throw new Exception($"Error delete file \"{absolutePath}\".");
+            }
+            response.Close();
+        }
+
+        public void Rename(string absolutePath, string name, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void RemoveDirectory(string DirectoryPath, CancellationToken ct = default)
+        public Task RenameAsync(string absolutePath, string name, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task RemoveDirectoryAsync(string DirectoryPath, CancellationToken ct = default)
+        public void UploadFile(string absolutePath, Stream stream, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void Rename(string uri, string name, CancellationToken ct = default)
+        public Task UploadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task RenameAsync(string uri, string name, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UploadFile(string uri, Stream stream, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task UploadFileAsync(string uri, Stream stream, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
