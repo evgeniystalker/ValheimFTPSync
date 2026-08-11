@@ -54,6 +54,7 @@ namespace ValheimFTPSync.Services
 
         public void SetUri(string uri)
         {
+            FtpClient = null;
             if (string.IsNullOrEmpty(uri))
             {
                 Logger.Warning("Cannot set URI: the value is null.");
@@ -71,6 +72,7 @@ namespace ValheimFTPSync.Services
                 Logger.Warning($"Can't create URI: \"{uri}\".");
                 return;
             }
+
             Uri = tryUri;
             FtpClient = new FtpClient(Uri);
 
@@ -93,9 +95,13 @@ namespace ValheimFTPSync.Services
             catch (WebException wEx)
             {
                 if (wEx.Response is FtpWebResponse ftpEx && ftpEx.StatusCode == FtpStatusCode.NotLoggedIn)
-                    Logger?.Info("Неверный логин или пароль!");
+                {
+                    Logger?.Error("Authentication error!");
+                    ftpEx.Close();
+                    ftpEx.Dispose();
+                }
                 else
-                    Logger?.Info("Ошибка подключения к ftp..." + wEx.Message);
+                    Logger?.Error(wEx.Message);
 
                 return false;
             }

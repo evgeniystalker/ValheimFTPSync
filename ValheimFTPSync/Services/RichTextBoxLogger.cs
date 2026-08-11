@@ -29,12 +29,12 @@ namespace ValheimFTPSync.Services
 
         public void Error(string message, Exception? ex = null)
         {
-            Log(_error, message + Environment.NewLine + ex.Message, Color.Red);
+            Log(_error, message + Environment.NewLine + ex?.Message, Color.Red);
         }
 
         public void Info(string message)
         {
-            Log(_info, message, _richTextBox.SelectionColor);
+            Log(_info, message, RichTextBox.DefaultForeColor);
         }
 
         public void Warning(string message)

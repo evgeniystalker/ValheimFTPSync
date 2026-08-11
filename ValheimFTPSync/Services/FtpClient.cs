@@ -105,7 +105,7 @@ namespace ValheimFTPSync.Services
         public long GetFileSize(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.GetFileSize;
             try
@@ -153,7 +153,7 @@ namespace ValheimFTPSync.Services
         {
 
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.DownloadFile;
             ftpWeb.UseBinary = true;
@@ -212,7 +212,7 @@ namespace ValheimFTPSync.Services
         public IList<string> ListDirectory(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
@@ -236,7 +236,7 @@ namespace ValheimFTPSync.Services
         public IList<string> ListDirectoryDetails(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
@@ -260,7 +260,7 @@ namespace ValheimFTPSync.Services
         public async Task<IList<string>> ListDirectoryAsync(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
@@ -268,8 +268,8 @@ namespace ValheimFTPSync.Services
             using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
             if (response == null)
                 throw new InvalidOperationException("There is no response from the connection.");
-            if (!response.WelcomeMessage?.Contains("230") ?? false && response.StatusCode != FtpStatusCode.OpeningData)
-                throw new InvalidOperationException("Response status is invalid");
+            if (!(response.WelcomeMessage?.Contains("230") ?? false) && response.StatusCode != FtpStatusCode.OpeningData)
+                throw new WebException($"Invalid FTP server response({response.StatusCode}) for operation \"{FtpStatusCode.OpeningData}\".", WebExceptionStatus.ProtocolError);
 
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = sr.ReadToEnd();
@@ -284,7 +284,7 @@ namespace ValheimFTPSync.Services
         public async Task<IList<string>> ListDirectoryDetailsAsync(string absolutePath)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
@@ -303,7 +303,7 @@ namespace ValheimFTPSync.Services
         public void MakeDirectory(string absolutePath, CancellationToken ct = default)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
             using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
@@ -314,7 +314,7 @@ namespace ValheimFTPSync.Services
         public async Task MakeDirectoryAsync(string absolutePath, CancellationToken ct = default)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
             using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
@@ -325,7 +325,7 @@ namespace ValheimFTPSync.Services
         public void RemoveDirectory(string absolutePath, CancellationToken ct = default)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.RemoveDirectory;
             using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
@@ -342,7 +342,7 @@ namespace ValheimFTPSync.Services
         public async Task RemoveDirectoryAsync(string absolutePath, CancellationToken ct = default)
         {
 #pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link."); ;
+            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
             ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
             using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;

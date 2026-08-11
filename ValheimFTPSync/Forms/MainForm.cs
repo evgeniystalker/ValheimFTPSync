@@ -144,5 +144,21 @@ namespace ValheimFTPSync
             loggerRichTextBox.Visible = !loggerRichTextBox.Visible;
             consoleButton.BackgroundImage = loggerRichTextBox.Visible ? Properties.Resources.consoleLeft : Properties.Resources.consoleRight;
         }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadSettings();
+        }
+
+        private void LoadSettings()
+        {
+            var point = SettingManager.AppSettingManager.DisplayPostion;
+            
+            if (!point.IsEmpty &&  Screen.AllScreens.Any(screen => screen.Bounds.Contains(point)))
+                this.DesktopLocation = point;
+
+            ftpUrlTextBox.Text = SettingManager.AppSettingManager.FtpUrl;
+            serverAppPathTextBox.Text = SettingManager.AppSettingManager.ServerAppFolderPath;
+        }
     }
 }

@@ -164,6 +164,7 @@
             Controls.Add(serverAppPathTextBox);
             Controls.Add(loggerRichTextBox);
             Name = "MainForm";
+            Load += MainForm_Load;
             LocationChanged += MainForm_LocationChanged;
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
             ResumeLayout(false);

@@ -7883,10 +7883,10 @@
     <value>Top, Bottom, Left, Right</value>
   </data>
   <data name="loggerRichTextBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>28, 204</value>
+    <value>12, 204</value>
   </data>
   <data name="loggerRichTextBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>336, 127</value>
+    <value>361, 140</value>
   </data>
   <data name="loggerRichTextBox.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>
