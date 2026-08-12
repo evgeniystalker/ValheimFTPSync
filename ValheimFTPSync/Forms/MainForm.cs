@@ -106,6 +106,7 @@ namespace ValheimFTPSync
 
         private System.Timers.Timer debounceTimer;
 
+        [MemberNotNull(nameof(debounceTimer))]
         private void InitializeTimer()
         {
             if(components is null)
@@ -137,11 +138,6 @@ namespace ValheimFTPSync
             connectStatusPictureBox.Image = Properties.Resources.cloud_load;
         }
 
-        private void MainForm_LocationChanged(object sender, EventArgs e)
-        {
-            SettingManager.AppSettingManager.DisplayPostion = this.DesktopLocation;
-        }
-
         private void consoleButton_Click(object sender, EventArgs e)
         {
             loggerRichTextBox.Visible = !loggerRichTextBox.Visible;
@@ -166,6 +162,7 @@ namespace ValheimFTPSync
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            SettingManager.AppSettingManager.DisplayPostion = this.DesktopLocation;
             SettingManager.Save();
             debounceTimer.Stop();
             debounceTimer.Elapsed -= FtpUrlCheckConnect;

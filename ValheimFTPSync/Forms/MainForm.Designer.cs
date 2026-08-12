@@ -166,7 +166,6 @@
             Name = "MainForm";
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
-            LocationChanged += MainForm_LocationChanged;
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
             ResumeLayout(false);
             PerformLayout();

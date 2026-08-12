@@ -61,22 +61,15 @@ namespace ValheimFTPSync.Services
                 Logger.Warning("Cannot set URI: the value is null.");
                 return;
             }
-            if (!CheckFtpUrl(uri))
-            {
-                Logger.Warning($"URI: \"{uri}\" is not valid.");
-                return;
-            }
-
             Uri? tryUri;
             if (!Uri.TryCreate(uri, UriKind.Absolute, out tryUri) && tryUri is null)
             {
-                Logger.Warning($"Can't create URI: \"{uri}\".");
+                Logger.Warning($"Can't create URI: \"{uri}\" is not valid.");
                 return;
             }
 
             Uri = tryUri;
             FtpClient = new FtpClient(Uri);
-
         }
 
         public delegate void DateTimeHandler(DateTime lastDateChanging);
@@ -499,19 +492,5 @@ namespace ValheimFTPSync.Services
                     ct.ThrowIfCancellationRequested();
             }
         }
-        private bool CheckFtpUrl(string url, char[]? invChars = null)
-        {
-            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute) || url.IndexOfAny(invChars ?? Path.GetInvalidPathChars()) > 0)
-            {
-                return false;
-            }
-            else if (!url.EndsWith('/'))
-            {
-                url += '/';
-            }
-            return true;
-        }
-
-
     }
 }

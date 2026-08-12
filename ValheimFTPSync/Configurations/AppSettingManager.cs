@@ -8,7 +8,7 @@ namespace ValheimFTPSync.Configuration
     internal class AppSettingManager : ISettingManager
     {
         public string ServerAppFolderPath { get; set; }
-        public string FtpUrl { get; set; }
+        public string FtpUrl { get; set => field = value.EndsWith("/") ? value : value + "/"; }
         public string ValheimExePath => string.IsNullOrWhiteSpace(ServerAppFolderPath) ? string.Empty : Path.Combine(ServerAppFolderPath, "valheim_server.exe");
 
         public Point DisplayPostion { get; set; }
