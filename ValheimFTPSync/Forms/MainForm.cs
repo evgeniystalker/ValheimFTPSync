@@ -95,7 +95,7 @@ namespace ValheimFTPSync
 
         private void startServerButton_Click(object sender, EventArgs e)
         {
-            //customProgressBar.Value += 10;
+            SettingManager.Save();
         }
 
         private void journalButton_Click(object sender, EventArgs e)
@@ -108,7 +108,10 @@ namespace ValheimFTPSync
 
         private void InitializeTimer()
         {
+            if(components is null)
+                components = new System.ComponentModel.Container();
             debounceTimer = new System.Timers.Timer(1000);
+            components.Add(debounceTimer);
             debounceTimer.AutoReset = false;
             debounceTimer.Elapsed += FtpUrlCheckConnect;
         }
@@ -153,12 +156,19 @@ namespace ValheimFTPSync
         private void LoadSettings()
         {
             var point = SettingManager.AppSettingManager.DisplayPostion;
-            
-            if (!point.IsEmpty &&  Screen.AllScreens.Any(screen => screen.Bounds.Contains(point)))
+
+            if (!point.IsEmpty && Screen.AllScreens.Any(screen => screen.Bounds.Contains(point)))
                 this.DesktopLocation = point;
 
             ftpUrlTextBox.Text = SettingManager.AppSettingManager.FtpUrl;
             serverAppPathTextBox.Text = SettingManager.AppSettingManager.ServerAppFolderPath;
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            SettingManager.Save();
+            debounceTimer.Stop();
+            debounceTimer.Elapsed -= FtpUrlCheckConnect;
         }
     }
 }

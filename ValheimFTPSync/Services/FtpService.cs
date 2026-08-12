@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using ValheimFTPSync.Extensions;
 using ValheimFTPSync.Models;
@@ -61,7 +62,7 @@ namespace ValheimFTPSync.Services
                 return;
             }
             if (!CheckFtpUrl(uri))
-            { 
+            {
                 Logger.Warning($"URI: \"{uri}\" is not valid.");
                 return;
             }
@@ -90,15 +91,23 @@ namespace ValheimFTPSync.Services
                 return false;
             try
             {
-                return await FtpClient.TryConnectAsync();
+                var isSuccessful = await FtpClient.TryConnectAsync();
+                if (isSuccessful)
+                    Logger.Info("Connection successful.");
+                else
+                    Logger.Info("Connection unsuccessful.");
+                return isSuccessful;
             }
             catch (WebException wEx)
             {
-                if (wEx.Response is FtpWebResponse ftpEx && ftpEx.StatusCode == FtpStatusCode.NotLoggedIn)
+                bool isConnected = NetworkInterface.GetIsNetworkAvailable();
+                if (!isConnected)
+                    Logger?.Error("Check your internet connection.");
+                else if (wEx.Response is FtpWebResponse ftpResponse && ftpResponse.StatusCode == FtpStatusCode.NotLoggedIn)
                 {
                     Logger?.Error("Authentication error!");
-                    ftpEx.Close();
-                    ftpEx.Dispose();
+                    ftpResponse.Close();
+                    ftpResponse.Dispose();
                 }
                 else
                     Logger?.Error(wEx.Message);
