@@ -53,23 +53,30 @@ namespace ValheimFTPSync.Services
         }
 
 
-        public void SetUri(string uri)
+        public void SetUri(string uriString, ICredentials? credentials = null)
         {
             FtpClient = null;
-            if (string.IsNullOrEmpty(uri))
+            if (string.IsNullOrEmpty(uriString))
             {
                 Logger.Warning("Cannot set URI: the value is null.");
                 return;
             }
             Uri? tryUri;
-            if (!Uri.TryCreate(uri, UriKind.Absolute, out tryUri) && tryUri is null)
+
+            if (!Uri.TryCreate(uriString, UriKind.Absolute, out tryUri) && tryUri is null)
             {
-                Logger.Warning($"Can't create URI: \"{uri}\" is not valid.");
+                Logger.Warning($"Can't create URI: \"{uriString}\" is not valid.");
+                return;
+            }
+
+            if (tryUri.Scheme != Uri.UriSchemeFtp)
+            {
+                Logger.Warning($"Unsupported URI scheme: \"{tryUri.Scheme}\".");
                 return;
             }
 
             Uri = tryUri;
-            FtpClient = new FtpClient(Uri);
+            FtpClient = new FtpClient(Uri, credentials);
         }
 
         public delegate void DateTimeHandler(DateTime lastDateChanging);

@@ -43,6 +43,8 @@
             ftpSyncProgressBar = new CustomControls.CustomProgressBar();
             loggerRichTextBox = new RichTextBox();
             consoleButton = new Button();
+            ftpUserNameTextBox = new TextBox();
+            ftpPasswordTextBox = new TextBox();
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
@@ -92,8 +94,8 @@
             // 
             // startServerButton
             // 
-            startServerButton.BackgroundImage = Properties.Resources.start_button;
             resources.ApplyResources(startServerButton, "startServerButton");
+            startServerButton.BackgroundImage = Properties.Resources.start_button;
             startServerButton.Name = "startServerButton";
             startServerButton.UseVisualStyleBackColor = true;
             startServerButton.Click += startServerButton_Click;
@@ -140,16 +142,31 @@
             // 
             // consoleButton
             // 
-            consoleButton.BackgroundImage = Properties.Resources.consoleRight;
             resources.ApplyResources(consoleButton, "consoleButton");
+            consoleButton.BackgroundImage = Properties.Resources.consoleRight;
             consoleButton.Name = "consoleButton";
             consoleButton.UseVisualStyleBackColor = true;
             consoleButton.Click += consoleButton_Click;
+            // 
+            // ftpUserNameTextBox
+            // 
+            resources.ApplyResources(ftpUserNameTextBox, "ftpUserNameTextBox");
+            ftpUserNameTextBox.Name = "ftpUserNameTextBox";
+            ftpUserNameTextBox.TextChanged += FtpUrlTextBox_TextChanged;
+            // 
+            // ftpPasswordTextBox
+            // 
+            resources.ApplyResources(ftpPasswordTextBox, "ftpPasswordTextBox");
+            ftpPasswordTextBox.Name = "ftpPasswordTextBox";
+            ftpPasswordTextBox.UseSystemPasswordChar = true;
+            ftpPasswordTextBox.TextChanged += FtpUrlTextBox_TextChanged;
             // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(ftpPasswordTextBox);
+            Controls.Add(ftpUserNameTextBox);
             Controls.Add(consoleButton);
             Controls.Add(ftpSyncProgressBar);
             Controls.Add(connectStatusPictureBox);
@@ -187,5 +204,7 @@
         private CustomControls.CustomProgressBar ftpSyncProgressBar;
         private RichTextBox loggerRichTextBox;
         private Button consoleButton;
+        private TextBox ftpUserNameTextBox;
+        private TextBox ftpPasswordTextBox;
     }
 }

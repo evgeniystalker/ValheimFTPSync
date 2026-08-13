@@ -26,31 +26,27 @@ namespace ValheimFTPSync.Services
                 _ftpUri = value;
             }
         }
-        private NetworkCredential? Credentials { get; }
+        private ICredentials? Credentials { get; }
 
 
         /// <summary>
         /// Инициализация клиента из строки Uri.
         /// </summary>
-        public FtpClient(string uri, NetworkCredential? credit = null) : this(new Uri(uri), credit) { }
+        public FtpClient(string uri, ICredentials? credit = null) : this(new Uri(uri), credit) { }
 
         /// <summary>
         /// Инициализация клиента из Uri.
         /// </summary>
-        public FtpClient(Uri uri, NetworkCredential? credit = null)
+        public FtpClient(Uri uri, ICredentials? credit = null)
         {
             FtpUri = uri;
             Credentials = credit;
-            if (string.IsNullOrEmpty(FtpUri.UserInfo) && credit is not null)
+            if (credit is not null && !string.IsNullOrEmpty(FtpUri.UserInfo))
             {
                 var builder = new UriBuilder(FtpUri);
-                builder.UserName = credit.UserName; builder.Password = credit.Password;
+                builder.UserName = string.Empty;
+                builder.Password = string.Empty;
                 FtpUri = builder.Uri;
-            }
-            else if (!string.IsNullOrEmpty(FtpUri.UserInfo) && credit is null)
-            {
-                var userSplit = FtpUri.UserInfo.Split(':');
-                Credentials = new NetworkCredential(userSplit.ElementAtOrDefault(0), userSplit.ElementAtOrDefault(1));
             }
         }
 
@@ -214,7 +210,8 @@ namespace ValheimFTPSync.Services
 #pragma warning disable SYSLIB0014 // Тип или член устарел
             FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
 #pragma warning restore SYSLIB0014 // Тип или член устарел
-
+            if (Credentials is not null)
+                ftpWeb.Credentials = Credentials;
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
 
             using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
@@ -264,6 +261,9 @@ namespace ValheimFTPSync.Services
 #pragma warning restore SYSLIB0014 // Тип или член устарел
 
             ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
+
+            if (Credentials is not null)
+                ftpWeb.Credentials = Credentials;
 
             using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
             if (response == null)
@@ -348,7 +348,7 @@ namespace ValheimFTPSync.Services
             using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
             if (response is null)
                 throw new WebException("Response status is invalid.");
-            
+
             if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
             {
                 throw new Exception($"Error delete file \"{absolutePath}\".");

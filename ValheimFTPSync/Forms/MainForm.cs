@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Net;
 using System.Resources;
 using System.Timers;
 using ValheimFTPSync.Configuration;
@@ -119,7 +120,10 @@ namespace ValheimFTPSync
 
         private async void FtpUrlCheckConnect(object? sender, ElapsedEventArgs e)
         {
-            FtpService.SetUri(ftpUrlTextBox.Text);
+            ICredentials? credentials = null;
+            if (!string.IsNullOrEmpty(ftpUserNameTextBox.Text) || !string.IsNullOrEmpty(ftpPasswordTextBox.Text))
+                credentials = new NetworkCredential(ftpUserNameTextBox.Text, ftpPasswordTextBox.Text);
+            FtpService.SetUri(ftpUrlTextBox.Text, credentials);
             var isConnect = await FtpService.TryConnectAsync();
             Invoke(new Action(() =>
             {
@@ -130,11 +134,13 @@ namespace ValheimFTPSync
             }));
         }
 
-        private async void FtpUrlTextBox_TextChanged(object sender, EventArgs e)
+        private void FtpUrlTextBox_TextChanged(object sender, EventArgs e)
         {
             debounceTimer.Stop();
             debounceTimer.Start();
-            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text;
+            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text.Trim();
+            SettingManager.AppSettingManager.FtpUserName = ftpUserNameTextBox.Text;
+            SettingManager.AppSettingManager.FtpPassword = ftpPasswordTextBox.Text;
             connectStatusPictureBox.Image = Properties.Resources.cloud_load;
         }
 
@@ -153,7 +159,7 @@ namespace ValheimFTPSync
         {
             var point = SettingManager.AppSettingManager.DisplayPostion;
 
-            if (!point.IsEmpty && Screen.AllScreens.Any(screen => screen.Bounds.Contains(point)))
+            if (!point.IsEmpty && Screen.AllScreens.Any(screen => screen.WorkingArea.Contains(point)))
                 this.DesktopLocation = point;
 
             ftpUrlTextBox.Text = SettingManager.AppSettingManager.FtpUrl;
