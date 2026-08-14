@@ -45,6 +45,7 @@
             consoleButton = new Button();
             ftpUserNameTextBox = new TextBox();
             ftpPasswordTextBox = new TextBox();
+            rememberPassCheckBox = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
@@ -64,6 +65,7 @@
             // russiaLanguageButton
             // 
             resources.ApplyResources(russiaLanguageButton, "russiaLanguageButton");
+            russiaLanguageButton.BackgroundImage = Properties.Resources.russia;
             russiaLanguageButton.Name = "russiaLanguageButton";
             russiaLanguageButton.Tag = "ru-RU";
             russiaLanguageButton.UseVisualStyleBackColor = true;
@@ -72,6 +74,7 @@
             // usLanguageButton
             // 
             resources.ApplyResources(usLanguageButton, "usLanguageButton");
+            usLanguageButton.BackgroundImage = Properties.Resources.us;
             usLanguageButton.Name = "usLanguageButton";
             usLanguageButton.Tag = "en-US";
             usLanguageButton.UseVisualStyleBackColor = true;
@@ -80,6 +83,7 @@
             // kzLanguageButton
             // 
             resources.ApplyResources(kzLanguageButton, "kzLanguageButton");
+            kzLanguageButton.BackgroundImage = Properties.Resources.kz;
             kzLanguageButton.Name = "kzLanguageButton";
             kzLanguageButton.Tag = "kk-KZ";
             kzLanguageButton.UseVisualStyleBackColor = true;
@@ -88,6 +92,7 @@
             // serverArgsButton
             // 
             resources.ApplyResources(serverArgsButton, "serverArgsButton");
+            serverArgsButton.BackgroundImage = Properties.Resources.settings;
             serverArgsButton.Name = "serverArgsButton";
             serverArgsButton.UseVisualStyleBackColor = true;
             serverArgsButton.Click += serverArgsButton_Click;
@@ -107,6 +112,7 @@
             // journalButton
             // 
             resources.ApplyResources(journalButton, "journalButton");
+            journalButton.BackgroundImage = Properties.Resources.journal;
             journalButton.Name = "journalButton";
             journalButton.UseVisualStyleBackColor = true;
             journalButton.Click += journalButton_Click;
@@ -161,10 +167,21 @@
             ftpPasswordTextBox.UseSystemPasswordChar = true;
             ftpPasswordTextBox.TextChanged += FtpUrlTextBox_TextChanged;
             // 
+            // rememberPassCheckBox
+            // 
+            resources.ApplyResources(rememberPassCheckBox, "rememberPassCheckBox");
+            rememberPassCheckBox.BackColor = Color.Transparent;
+            rememberPassCheckBox.ForeColor = SystemColors.ActiveCaption;
+            rememberPassCheckBox.Name = "rememberPassCheckBox";
+            rememberPassCheckBox.UseVisualStyleBackColor = false;
+            rememberPassCheckBox.CheckedChanged += rememberPassCheckBox_CheckedChanged;
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            BackgroundImage = Properties.Resources.background;
+            Controls.Add(rememberPassCheckBox);
             Controls.Add(ftpPasswordTextBox);
             Controls.Add(ftpUserNameTextBox);
             Controls.Add(consoleButton);
@@ -180,6 +197,7 @@
             Controls.Add(serverAppPathBrowseButton);
             Controls.Add(serverAppPathTextBox);
             Controls.Add(loggerRichTextBox);
+            Icon = Properties.Resources.IconValheim;
             Name = "MainForm";
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
@@ -206,5 +224,6 @@
         private Button consoleButton;
         private TextBox ftpUserNameTextBox;
         private TextBox ftpPasswordTextBox;
+        private CheckBox rememberPassCheckBox;
     }
 }

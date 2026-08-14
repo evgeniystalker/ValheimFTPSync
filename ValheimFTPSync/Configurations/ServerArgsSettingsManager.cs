@@ -34,7 +34,7 @@ namespace ValheimFTPSync.Configuration
             Name = Properties.ServerArgsSettings.Default.Name;
             Port = Properties.ServerArgsSettings.Default.Port;
             World =  Properties.ServerArgsSettings.Default.World;
-            Password = Properties.ServerArgsSettings.Default.Password == Properties.ServerArgsSettings.Default.Properties[nameof(Password)].DefaultValue.ToString() ? Properties.ServerArgsSettings.Default.Password : dpapiEncryptionService.Decrypt(Properties.ServerArgsSettings.Default.Password);
+            Password = Properties.ServerArgsSettings.Default.Password == (string)Properties.ServerArgsSettings.Default.Properties[nameof(Password)].DefaultValue ? Properties.ServerArgsSettings.Default.Password : dpapiEncryptionService.Decrypt(Properties.ServerArgsSettings.Default.Password);
             Crossplay = Properties.ServerArgsSettings.Default.Crossplay;
             Savedir = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
             //Savedir = 

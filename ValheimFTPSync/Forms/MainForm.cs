@@ -40,7 +40,10 @@ namespace ValheimFTPSync
             foreach (Control ctrl in this.Controls)
             {
                 if (ctrl is TextBox textBox)
+                {
                     textBox.PlaceholderText = rm.GetString(ctrl.Name + "." + nameof(textBox.PlaceholderText), culture);
+                    textBox.Size = rm.GetObject(ctrl.Name + "." + nameof(textBox.Size), culture) is Size size ? size : textBox.Size;
+                }
                 else
                     ctrl.Text = rm.GetString(ctrl.Name + ".Text", culture);
             }
@@ -61,13 +64,13 @@ namespace ValheimFTPSync
         private void serverAppPathTextBox_TextChanged(object sender, EventArgs e)
         {
             SettingManager.AppSettingManager.ServerAppFolderPath = serverAppPathTextBox.Text;
-            if (Directory.Exists(SettingManager.AppSettingManager.ServerAppFolderPath))
+            if (Directory.Exists(SettingManager.AppSettingManager.ServerAppFolderPath)
+                && File.Exists(SettingManager.AppSettingManager.ValheimExePath)
+                && SettingManager.AppSettingManager.ServerAppFolderPath != serverAppPathTextBox.Text)
             {
-                if (File.Exists(SettingManager.AppSettingManager.ValheimExePath))
-                {
-                    // Файл найден! Сохраняем настройки
-                    SettingManager.AppSettingManager.Save();
-                }
+                // Файл найден! Сохраняем настройки
+                SettingManager.AppSettingManager.Save();
+
             }
         }
 
@@ -96,6 +99,7 @@ namespace ValheimFTPSync
 
         private void startServerButton_Click(object sender, EventArgs e)
         {
+            ftpPasswordTextBox.Size = new Size(ftpPasswordTextBox.Size.Width + 23, ftpPasswordTextBox.Size.Height);
             SettingManager.Save();
         }
 
@@ -110,7 +114,7 @@ namespace ValheimFTPSync
         [MemberNotNull(nameof(debounceTimer))]
         private void InitializeTimer()
         {
-            if(components is null)
+            if (components is null)
                 components = new System.ComponentModel.Container();
             debounceTimer = new System.Timers.Timer(1000);
             components.Add(debounceTimer);
@@ -138,9 +142,19 @@ namespace ValheimFTPSync
         {
             debounceTimer.Stop();
             debounceTimer.Start();
-            SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text.Trim();
-            SettingManager.AppSettingManager.FtpUserName = ftpUserNameTextBox.Text;
-            SettingManager.AppSettingManager.FtpPassword = ftpPasswordTextBox.Text;
+            switch (sender)
+            {
+                case TextBox textBox when textBox.Name == nameof(ftpUrlTextBox):
+                    SettingManager.AppSettingManager.FtpUrl = ftpUrlTextBox.Text.Trim();
+                    break;
+                case TextBox textBox when textBox.Name == nameof(ftpUserNameTextBox):
+                    SettingManager.AppSettingManager.FtpUserName = ftpUserNameTextBox.Text;
+                    break;
+                case TextBox textBox when textBox.Name == nameof(ftpPasswordTextBox):
+                    SettingManager.AppSettingManager.FtpPassword = ftpPasswordTextBox.Text;
+                    break;
+            }
+            
             connectStatusPictureBox.Image = Properties.Resources.cloud_load;
         }
 
@@ -164,6 +178,9 @@ namespace ValheimFTPSync
 
             ftpUrlTextBox.Text = SettingManager.AppSettingManager.FtpUrl;
             serverAppPathTextBox.Text = SettingManager.AppSettingManager.ServerAppFolderPath;
+            ftpUserNameTextBox.Text = SettingManager.AppSettingManager.FtpUserName;
+            ftpPasswordTextBox.Text = SettingManager.AppSettingManager.FtpPassword;
+            rememberPassCheckBox.Checked = SettingManager.AppSettingManager.RememberPassword;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -172,6 +189,11 @@ namespace ValheimFTPSync
             SettingManager.Save();
             debounceTimer.Stop();
             debounceTimer.Elapsed -= FtpUrlCheckConnect;
+        }
+
+        private void rememberPassCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            SettingManager.AppSettingManager.RememberPassword = rememberPassCheckBox.Checked;
         }
     }
 }
