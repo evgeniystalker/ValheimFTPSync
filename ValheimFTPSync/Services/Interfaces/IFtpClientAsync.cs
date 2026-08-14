@@ -8,9 +8,9 @@ namespace ValheimFTPSync.Services.Interfaces
 {
     internal interface IFtpClientAsync
     {
-        Task AppendFileAsync(string absolutePath, CancellationToken ct = default);
+        Task AppendFileAsync(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
         Task DeleteFileAsync(string absolutePath, CancellationToken ct = default);
-        Task DownloadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default);
+        Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
         Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken ct = default);
         Task<long> GetFileSizeAsync(string absolutePath, CancellationToken ct = default);
         Task<IList<string>> ListDirectoryAsync(string absolutePath);
@@ -18,9 +18,9 @@ namespace ValheimFTPSync.Services.Interfaces
         Task MakeDirectoryAsync(string absolutePath, CancellationToken ct = default);
         Task RemoveDirectoryAsync(string absolutePath, CancellationToken ct = default);
         Task RenameAsync(string absolutePath, string name, CancellationToken ct = default);
-        Task UploadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default);
+        Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
 
-        public event EventHandler<ProgressEventArgs> ProgressChanged;
+        public event EventHandler<TransferProgress> ProgressChanged;
 
     }
 }

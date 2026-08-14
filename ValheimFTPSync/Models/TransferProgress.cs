@@ -4,15 +4,21 @@ using System.Text;
 
 namespace ValheimFTPSync.Models
 {
-    internal class ProgressEventArgs
+    internal class TransferProgress
     {
         public int Percent { get; }
         public long BytesTransferred { get; }
         public long TotalBytes { get; }
         public Operation Operation { get; } // "Upload" или "Download"
-        public double Speed { get; set; }
+        public double Speed { get; }
+        int CompletedFiles { get; }
+        int TotalFiles { get; }
+        public float FileProgress => TotalBytes == 0 ? 0 : (float)BytesTransferred / TotalBytes;
 
-        public ProgressEventArgs(int percent, long bytesTransferred, long totalBytes, Operation operation)
+        public float OverallProgress => TotalFiles == 0 ? 0 : (CompletedFiles + FileProgress) / TotalFiles;
+
+
+        public TransferProgress(int percent, long bytesTransferred, long totalBytes, Operation operation)
         {
             Percent = percent;
             BytesTransferred = bytesTransferred;

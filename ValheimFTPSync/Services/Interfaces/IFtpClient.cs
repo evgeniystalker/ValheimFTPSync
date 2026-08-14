@@ -8,9 +8,9 @@ namespace ValheimFTPSync.Services.Interfaces
 {
     internal interface IFtpClient
     {
-        void AppendFile(string absolutePath, CancellationToken ct = default);
-        void DeleteFile(string absolutePath, CancellationToken ct = default);
-        void DownloadFile(string absolutePath, Stream stream, CancellationToken ct = default);
+        void AppendFile(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
+        void DeleteFile(string absolutePath,  CancellationToken ct = default);
+        void DownloadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
         DateTime GetDateTimeStamp(string absolutePath);
         long GetFileSize(string absolutePath);
         IList<string> ListDirectory(string absolutePath);
@@ -18,9 +18,9 @@ namespace ValheimFTPSync.Services.Interfaces
         void MakeDirectory(string absolutePath, CancellationToken ct = default);
         void RemoveDirectory(string absolutePath, CancellationToken ct = default);
         void Rename(string absolutePath, string name, CancellationToken ct = default);
-        void UploadFile(string absolutePath, Stream stream, CancellationToken ct = default);
+        void UploadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default);
 
-        public event EventHandler<ProgressEventArgs> ProgressChanged;
+        public event EventHandler<TransferProgress> ProgressChanged;
 
     }
 }

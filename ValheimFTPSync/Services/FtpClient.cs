@@ -11,19 +11,19 @@ namespace ValheimFTPSync.Services
 {
     internal class FtpClient : IFtpClient, IFtpClientAsync
     {
-        private Uri _ftpUri;
+        private Uri _baseFtpUri;
 
-        public event EventHandler<ProgressEventArgs>? ProgressChanged;
+        public event EventHandler<TransferProgress>? ProgressChanged;
 
-        private Uri FtpUri
+        private Uri BaseFtpUri
         {
-            get => _ftpUri;
-            [MemberNotNull(nameof(_ftpUri))]
+            get => _baseFtpUri;
+            [MemberNotNull(nameof(_baseFtpUri))]
             set
             {
                 if (!value.Scheme.Equals(Uri.UriSchemeFtp, StringComparison.OrdinalIgnoreCase))
                     throw new Exception($"Схема ({value.Scheme}) не соответствует ftp://");
-                _ftpUri = value;
+                _baseFtpUri = value;
             }
         }
         private ICredentials? Credentials { get; }
@@ -39,14 +39,14 @@ namespace ValheimFTPSync.Services
         /// </summary>
         public FtpClient(Uri uri, ICredentials? credit = null)
         {
-            FtpUri = uri;
+            BaseFtpUri = uri;
             Credentials = credit;
-            if (credit is not null && !string.IsNullOrEmpty(FtpUri.UserInfo))
+            if (credit is not null && !string.IsNullOrEmpty(BaseFtpUri.UserInfo))
             {
-                var builder = new UriBuilder(FtpUri);
+                var builder = new UriBuilder(BaseFtpUri);
                 builder.UserName = string.Empty;
                 builder.Password = string.Empty;
-                FtpUri = builder.Uri;
+                BaseFtpUri = builder.Uri;
             }
         }
 
@@ -73,29 +73,20 @@ namespace ValheimFTPSync.Services
 
         public DateTime GetDateTimeStamp(string absolutePath)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.GetDateTimestamp;
-            try
-            {
-                using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
-                {
-                    if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
-                        throw new Exception("Неверный код ответа при запросе даты");
-
-                    return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            //if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
+            //    throw new Exception("Неверный код ответа при запросе даты");
+            return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
         }
 
-        public Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken ct = default)
+        public async Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
         }
 
         public long GetFileSize(string absolutePath)
@@ -125,12 +116,12 @@ namespace ValheimFTPSync.Services
             throw new NotImplementedException();
         }
 
-        public void AppendFile(string absolutePath, CancellationToken ct = default)
+        public void AppendFile(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task AppendFileAsync(string absolutePath, CancellationToken ct = default)
+        public Task AppendFileAsync(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -145,7 +136,7 @@ namespace ValheimFTPSync.Services
             throw new NotImplementedException();
         }
 
-        public void DownloadFile(string absolutePath, Stream stream, CancellationToken ct = default)
+        public void DownloadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
 
 #pragma warning disable SYSLIB0014 // Тип или член устарел
@@ -184,7 +175,7 @@ namespace ValheimFTPSync.Services
                     if (precent != oldPrecent)
                     {
                         oldPrecent = precent;
-                        ProgressChanged?.Invoke(this, new ProgressEventArgs(precent, countBytes, lenghtBytes, Operation.Download));
+                        ProgressChanged?.Invoke(this, new TransferProgress(precent, countBytes, lenghtBytes, Operation.Download));
                         //progressOneFile.Report(precent / 100f);
                     }
 
@@ -195,7 +186,7 @@ namespace ValheimFTPSync.Services
             }
         }
 
-        public Task DownloadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default)
+        public Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -207,19 +198,9 @@ namespace ValheimFTPSync.Services
 
         public IList<string> ListDirectory(string absolutePath)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            if (Credentials is not null)
-                ftpWeb.Credentials = Credentials;
-            ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
-
-            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response == null)
-                throw new InvalidOperationException("There is no response from the connection.");
-            if (!response.WelcomeMessage?.Contains("230") ?? false && response.StatusCode != FtpStatusCode.OpeningData)
-                throw new InvalidOperationException("Response status is invalid");
-
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = sr.ReadToEnd();
             return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -232,18 +213,9 @@ namespace ValheimFTPSync.Services
 
         public IList<string> ListDirectoryDetails(string absolutePath)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-
-            ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
-
-            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response == null)
-                throw new InvalidOperationException("There is no response from the connection.");
-            if (!response.WelcomeMessage?.Contains("230") ?? false && response.StatusCode != FtpStatusCode.OpeningData)
-                throw new InvalidOperationException("Response status is invalid");
-
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = sr.ReadToEnd();
             return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -256,23 +228,11 @@ namespace ValheimFTPSync.Services
 
         public async Task<IList<string>> ListDirectoryAsync(string absolutePath)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-
-            ftpWeb.Method = WebRequestMethods.Ftp.ListDirectory;
-
-            if (Credentials is not null)
-                ftpWeb.Credentials = Credentials;
-
-            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
-            if (response == null)
-                throw new InvalidOperationException("There is no response from the connection.");
-            if (!(response.WelcomeMessage?.Contains("230") ?? false) && response.StatusCode != FtpStatusCode.OpeningData)
-                throw new WebException($"Invalid FTP server response({response.StatusCode}) for operation \"{FtpStatusCode.OpeningData}\".", WebExceptionStatus.ProtocolError);
-
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
-            string dataFiles = sr.ReadToEnd();
+            string dataFiles = await sr.ReadToEndAsync();
             return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 
@@ -283,98 +243,111 @@ namespace ValheimFTPSync.Services
 
         public async Task<IList<string>> ListDirectoryDetailsAsync(string absolutePath)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-
-            ftpWeb.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
-
-            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
-            if (response == null)
-                throw new InvalidOperationException("There is no response from the connection.");
-            if (!response.WelcomeMessage?.Contains("230") ?? false && response.StatusCode != FtpStatusCode.OpeningData)
-                throw new InvalidOperationException("Response status is invalid");
-
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
-            string dataFiles = sr.ReadToEnd();
+            string dataFiles = await sr.ReadToEndAsync();
             return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 
         public void MakeDirectory(string absolutePath, CancellationToken ct = default)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
-            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response is null)
-                throw new WebException("Response status is invalid.");
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public async Task MakeDirectoryAsync(string absolutePath, CancellationToken ct = default)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
-            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
-            if (response is null)
-                throw new WebException("Response status is invalid.");
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public void RemoveDirectory(string absolutePath, CancellationToken ct = default)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.RemoveDirectory;
-            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response is null)
-                throw new WebException("Response status is invalid.");
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            /*Поэтому
 
+Если у тебя после удаления:
+
+response.WelcomeMessage
+
+показывает что-то вроде:
+
+250 File deleted successfully
+
+я бы не использовал это как доказательство успешного удаления.
+
+Посмотри именно:
+
+response.StatusCode
+response.StatusDescription
+response.WelcomeMessage
+
+и сравни их после DeleteFile.
+
+Если покажешь, что конкретно выводится в этих трёх свойствах после удаления, я смогу сказать, почему твой конкретный FtpWebRequest кладёт 250 именно туда.*/
             if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
             {
                 throw new Exception($"Error delete file \"{absolutePath}\".");
             }
-            response.Close();
         }
 
         public async Task RemoveDirectoryAsync(string absolutePath, CancellationToken ct = default)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(new Uri(FtpUri, absolutePath)) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
-            using FtpWebResponse? response = await ftpWeb.GetResponseAsync() as FtpWebResponse;
-            if (response is null)
-                throw new WebException("Response status is invalid.");
-
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
             {
                 throw new Exception($"Error delete file \"{absolutePath}\".");
             }
-            response.Close();
         }
 
         public void Rename(string absolutePath, string name, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
-        public Task RenameAsync(string absolutePath, string name, CancellationToken ct = default)
+        public async Task RenameAsync(string absolutePath, string name, CancellationToken ct = default)
+        {
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath, false);
+            using var registration = ct.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+        }
+
+        public void UploadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void UploadFile(string absolutePath, Stream stream, CancellationToken ct = default)
+        public Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task UploadFileAsync(string absolutePath, Stream stream, CancellationToken ct = default)
+        private FtpWebRequest CreateRequest(string method, string? path = null, bool keepAlive = true)
         {
-            throw new NotImplementedException();
-        }
+            var uri = path is null ? BaseFtpUri : new Uri(BaseFtpUri, path);
 
+#pragma warning disable SYSLIB0014 // Тип или член устарел
+            FtpWebRequest request = FtpWebRequest.Create(uri) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
+#pragma warning restore SYSLIB0014 // Тип или член устарел
+
+            request.Method = method;
+            if (Credentials is not null)
+                request.Credentials = Credentials;
+
+            request.UseBinary = true;
+            request.KeepAlive = keepAlive;
+            return request;
+        }
     }
+
 }
