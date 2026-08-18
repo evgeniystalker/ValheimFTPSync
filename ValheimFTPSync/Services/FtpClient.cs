@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Policy;
@@ -12,7 +13,7 @@ namespace ValheimFTPSync.Services
     internal class FtpClient : IFtpClient, IFtpClientAsync
     {
         private Uri _baseFtpUri;
-
+        private TimeSpan _dateTimeOffset = TimeSpan.FromHours(-10);
         public event EventHandler<TransferProgress>? ProgressChanged;
 
         private Uri BaseFtpUri
@@ -53,286 +54,375 @@ namespace ValheimFTPSync.Services
         /// <summary>
         /// Пытается подключиться к FTP и возвращает пользовательское сообщение о результате.
         /// </summary>
-        public bool TryConnect()
-        {
-            if (this.ListDirectory() != null)
-            {
-                //  Logger?.Info("Проверка успешна!");
-                return true;
-            }
-            else
-            {
-                //   Logger?.Warning("Ошибка подключения к ftp...");
-                return false;
-            }
-        }
-        internal async Task<bool> TryConnectAsync()
-        {
-            return await this.ListDirectoryAsync() != null;
-        }
+        public bool TryConnect() => this.ListDirectory() != null;
 
+        /// <summary>
+        /// Пытается асснхронно подключиться к FTP и возвращает пользовательское сообщение о результате.
+        /// </summary>
+        internal async Task<bool> TryConnectAsync() => await this.ListDirectoryAsync() != null;
+
+        /// <summary>
+        /// Получить дату сохранения файла на FTP в UTC.
+        /// </summary>
+        /// <param name="absolutePath">Путь к файлу.</param>
+        /// <param name="cancellationToken">Токен отмены.</param>
+        /// <returns>Дата сохренения файла на FTP в UTC.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public DateTime GetDateTimeStamp(string absolutePath, CancellationToken cancellationToken)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
-            //if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
-            //    throw new Exception("Неверный код ответа при запросе даты");
-            return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
+            var rawServerDateTime = DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Unspecified);
+            var verifiDateTime = new DateTimeOffset(rawServerDateTime, _dateTimeOffset).UtcDateTime;
+            return verifiDateTime;
         }
 
         public async Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetDateTimestamp, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
-            return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
+            var rawServerDateTime = DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Unspecified);
+            var verifiDateTime = new DateTimeOffset(rawServerDateTime, _dateTimeOffset).UtcDateTime;
+            return verifiDateTime;
         }
 
         public long GetFileSize(string absolutePath, CancellationToken cancellationToken = default)
         {
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.GetFileSize;
-            try
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetFileSize, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            return response.ContentLength;
+        }
+
+        public async Task<long> GetFileSizeAsync(string absolutePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.GetFileSize, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            return response.ContentLength;
+        }
+
+        public void AppendFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Input stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.AppendFile, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+
+            using Stream requestStream = request.GetRequestStream() ?? throw new InvalidOperationException("Request stream is null.");
+
+            long totalBytes = stream.Length;
+
+            byte[] buffer = new byte[4096];
+            long bytesWritten = 0;
+            int readBytes;
+
+            while ((readBytes = stream.Read(buffer, 0, buffer.Length)) != 0)
             {
-                using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
-                {
-                    if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
-                        throw new Exception("Неверный код ответа при запросе даты");
+                cancellationToken.ThrowIfCancellationRequested();
+                requestStream.Write(buffer, 0, buffer.Length);
+                bytesWritten += readBytes;
 
-                    return response.ContentLength;
-                }
+                var transferProgress = new TransferProgress(bytesWritten, totalBytes);
+                progress?.Report(transferProgress);
+                ProgressChanged?.Invoke(this, transferProgress);
             }
-            catch (Exception)
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("FTP request returned an invalid response.");
+        }
+
+        public async Task AppendFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Input stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.AppendFile, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+
+            await using Stream requestStream = await request.GetRequestStreamAsync() ?? throw new InvalidOperationException("Request stream is null.");
+
+            long totalBytes = stream.Length;
+
+            byte[] buffer = new byte[4096];
+            long bytesWritten = 0;
+            int readBytes;
+
+            while ((readBytes = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) != 0)
             {
-                throw;
+                cancellationToken.ThrowIfCancellationRequested();
+                await requestStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+                bytesWritten += readBytes;
+
+                var transferProgress = new TransferProgress(bytesWritten, totalBytes);
+                progress?.Report(transferProgress);
+                ProgressChanged?.Invoke(this, transferProgress);
             }
-        }
-
-        public Task<long> GetFileSizeAsync(string absolutePath, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AppendFile(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task AppendFileAsync(string absolutePath, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("FTP request returned an invalid response.");
         }
 
         public void DeleteFile(string absolutePath, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.DeleteFile, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
-        public Task DeleteFileAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task DeleteFileAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.DeleteFile, absolutePath);
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public void DownloadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Destination stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
 
-#pragma warning disable SYSLIB0014 // Тип или член устарел
-            FtpWebRequest? ftpWeb = FtpWebRequest.Create(absolutePath) as FtpWebRequest ?? throw new InvalidOperationException("It isn't possible to create an Ftp connection. Invalid link.");
-#pragma warning restore SYSLIB0014 // Тип или член устарел
-            ftpWeb.Method = WebRequestMethods.Ftp.DownloadFile;
-            ftpWeb.UseBinary = true;
-            ftpWeb.ConnectionGroupName = "DownloadFTP";
-            using FtpWebResponse? response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response?.StatusDescription?.Contains("150") ?? false && response.StatusCode == FtpStatusCode.OpeningData)
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath);
+            request.KeepAlive = true;
+            request.ConnectionGroupName = "DownloadFTP";
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            using var responseStream = response.GetResponseStream() ?? throw new InvalidOperationException("Response stream is null.");
+            long totalBytes = responseStream.Length;
+
+            const int bufferSize = 4096;
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+            long bytesWritten = 0;
+            while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) != 0)
             {
-                using Stream streamResponse = response.GetResponseStream();
-                //using FileStream writer = new FileStream(, FileMode.Create);
-
-                // Получаем информацию о файле для сохранения даты создания
-                DateTime? lastModified = null;
-                if (response.LastModified != DateTime.MinValue)
-                {
-                    lastModified = response.LastModified;
-                }
-
-
-                var lenghtBytes = response.ContentLength;
-                byte[] buffer = new byte[4096];
-
-                int oldPrecent = 0;
-                int numOfBytesRead = streamResponse.Read(buffer, 0, buffer.Length);
-                long countBytes = numOfBytesRead;
-
-                while (numOfBytesRead != 0)
-                {
-                    //writer.Write(buffer, 0, numOfBytesRead);
-                    numOfBytesRead = streamResponse.Read(buffer, 0, buffer.Length);
-                    int precent = (int)((countBytes += numOfBytesRead) * 100 / lenghtBytes);
-
-                    if (precent != oldPrecent)
-                    {
-                        oldPrecent = precent;
-                        ProgressChanged?.Invoke(this, new TransferProgress(precent, countBytes, lenghtBytes, Operation.Download));
-                        //progressOneFile.Report(precent / 100f);
-                    }
-
-                }
-                //writer.Flush();
-                //writer.Close();
-                //UpdateLocalFileAttrributeDateTime(tempPath, file.DateTimeChangedFile);
+                cancellationToken.ThrowIfCancellationRequested();
+                stream.Write(buffer, 0, bytesRead);
+                bytesWritten += bytesRead;
+                var transferProgress = new TransferProgress(bytesWritten, totalBytes);
+                progress?.Report(transferProgress);
+                ProgressChanged?.Invoke(this, transferProgress);
             }
         }
 
-        public Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Destination stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath);
+            request.KeepAlive = true;
+            request.ConnectionGroupName = "DownloadFTP";
+            using var registration = cancellationToken.Register(request.Abort);
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
+            using var responseStream = response.GetResponseStream() ?? throw new InvalidOperationException("Response stream is null.");
+            long totalBytes = responseStream.Length;
+
+            const int bufferSize = 4096;
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+            long bytesWritten = 0;
+            while ((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) != 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await stream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+                bytesWritten += bytesRead;
+                var transferProgress = new TransferProgress(bytesWritten, totalBytes);
+                progress?.Report(transferProgress);
+                ProgressChanged?.Invoke(this, transferProgress);
+            }
         }
 
-        public IList<string> ListDirectory()
+        public IEnumerable<string> ListDirectory()
         {
             return ListDirectory("/");
         }
 
-        public IList<string> ListDirectory(string absolutePath, CancellationToken cancellationToken = default)
+        public IEnumerable<string> ListDirectory(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = sr.ReadToEnd();
-            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public IList<string> ListDirectoryDetails()
+        public IEnumerable<string> ListDirectoryDetails()
         {
             return ListDirectoryDetails("/");
         }
 
-        public IList<string> ListDirectoryDetails(string absolutePath, CancellationToken cancellationToken = default)
+        public IEnumerable<string> ListDirectoryDetails(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = sr.ReadToEnd();
-            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public async Task<IList<string>> ListDirectoryAsync()
+        public async Task<IEnumerable<string>> ListDirectoryAsync()
         {
             return await ListDirectoryAsync("/");
         }
 
-        public async Task<IList<string>> ListDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> ListDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = await sr.ReadToEndAsync();
-            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public async Task<IList<string>> ListDirectoryDetailsAsync()
+        public async Task<IEnumerable<string>> ListDirectoryDetailsAsync()
         {
             return await ListDirectoryDetailsAsync("/");
         }
 
-        public async Task<IList<string>> ListDirectoryDetailsAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> ListDirectoryDetailsAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectoryDetails, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             using StreamReader sr = new StreamReader(response.GetResponseStream());
             string dataFiles = await sr.ReadToEndAsync();
-            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+            return dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         }
 
         public void MakeDirectory(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public async Task MakeDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.MakeDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public void RemoveDirectory(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
-            /*Поэтому
-
-Если у тебя после удаления:
-
-response.WelcomeMessage
-
-показывает что-то вроде:
-
-250 File deleted successfully
-
-я бы не использовал это как доказательство успешного удаления.
-
-Посмотри именно:
-
-response.StatusCode
-response.StatusDescription
-response.WelcomeMessage
-
-и сравни их после DeleteFile.
-
-Если покажешь, что конкретно выводится в этих трёх свойствах после удаления, я смогу сказать, почему твой конкретный FtpWebRequest кладёт 250 именно туда.*/
-            if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
-            {
-                throw new Exception($"Error delete file \"{absolutePath}\".");
-            }
         }
 
         public async Task RemoveDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.RemoveDirectory, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
-            if (!response.StatusDescription?.Contains("250") ?? false && response.StatusCode != FtpStatusCode.FileActionOK)
-            {
-                throw new Exception($"Error delete file \"{absolutePath}\".");
-            }
         }
 
         public void Rename(string absolutePath, string name, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public async Task RenameAsync(string absolutePath, string name, CancellationToken cancellationToken = default)
         {
-            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath, false);
+            cancellationToken.ThrowIfCancellationRequested();
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.Rename, absolutePath);
             using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
         public void UploadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Input stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.UploadFile, absolutePath);
+            request.KeepAlive = true;
+            request.ConnectionGroupName = "UploadFTP";
+
+            var bytesLength = request.ContentLength = stream.Length;
+            using Stream streamRequest = request.GetRequestStream() ?? throw new InvalidOperationException("Request stream is null.");
+
+            byte[] buffer = new byte[4096];
+            long bytesWritten = 0;
+            int bytesRead;
+            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                streamRequest.Write(buffer, 0, bytesRead);
+                bytesWritten += bytesRead;
+                var transfer = new TransferProgress(bytesWritten, bytesLength);
+                progress?.Report(transfer);
+                ProgressChanged?.Invoke(this, transfer);
+            }
+            using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
-        public Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(absolutePath))
+                throw new ArgumentException("Absolute path cannot be null or empty.", nameof(absolutePath));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream), "Input stream cannot be null.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.UploadFile, absolutePath);
+            request.KeepAlive = true;
+            request.ConnectionGroupName = "UploadFTP";
+
+            var bytesLength = request.ContentLength = stream.Length;
+            await using Stream streamRequest = await request.GetRequestStreamAsync() ?? throw new InvalidOperationException("Request stream is null.");
+
+            byte[] buffer = new byte[4096];
+            long bytesWritten = 0;
+            int bytesRead;
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await streamRequest.WriteAsync(buffer, 0, bytesRead);
+                bytesWritten += bytesRead;
+                var transfer = new TransferProgress(bytesWritten, bytesLength);
+                progress?.Report(transfer);
+                ProgressChanged?.Invoke(this, transfer);
+            }
+            using FtpWebResponse response = await request.GetResponseAsync() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
 
-        private FtpWebRequest CreateRequest(string method, string? path = null, bool keepAlive = true)
+        private FtpWebRequest CreateRequest(string method, string? path = null)
         {
             var uri = path is null ? BaseFtpUri : new Uri(BaseFtpUri, path);
 
@@ -345,7 +435,6 @@ response.WelcomeMessage
                 request.Credentials = Credentials;
 
             request.UseBinary = true;
-            request.KeepAlive = keepAlive;
             return request;
         }
     }
