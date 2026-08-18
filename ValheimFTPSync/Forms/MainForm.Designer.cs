@@ -39,9 +39,14 @@
             serverAppPathBrowserDialog = new FolderBrowserDialog();
             journalButton = new Button();
             ftpUrlTextBox = new TextBox();
-            pictureBox1 = new PictureBox();
+            connectStatusPictureBox = new PictureBox();
             ftpSyncProgressBar = new CustomControls.CustomProgressBar();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            loggerRichTextBox = new RichTextBox();
+            consoleButton = new Button();
+            ftpUserNameTextBox = new TextBox();
+            ftpPasswordTextBox = new TextBox();
+            rememberPassCheckBox = new CheckBox();
+            ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
             // serverAppPathTextBox
@@ -60,6 +65,7 @@
             // russiaLanguageButton
             // 
             resources.ApplyResources(russiaLanguageButton, "russiaLanguageButton");
+            russiaLanguageButton.BackgroundImage = Properties.Resources.russia;
             russiaLanguageButton.Name = "russiaLanguageButton";
             russiaLanguageButton.Tag = "ru-RU";
             russiaLanguageButton.UseVisualStyleBackColor = true;
@@ -68,6 +74,7 @@
             // usLanguageButton
             // 
             resources.ApplyResources(usLanguageButton, "usLanguageButton");
+            usLanguageButton.BackgroundImage = Properties.Resources.us;
             usLanguageButton.Name = "usLanguageButton";
             usLanguageButton.Tag = "en-US";
             usLanguageButton.UseVisualStyleBackColor = true;
@@ -76,6 +83,7 @@
             // kzLanguageButton
             // 
             resources.ApplyResources(kzLanguageButton, "kzLanguageButton");
+            kzLanguageButton.BackgroundImage = Properties.Resources.kz;
             kzLanguageButton.Name = "kzLanguageButton";
             kzLanguageButton.Tag = "kk-KZ";
             kzLanguageButton.UseVisualStyleBackColor = true;
@@ -84,14 +92,15 @@
             // serverArgsButton
             // 
             resources.ApplyResources(serverArgsButton, "serverArgsButton");
+            serverArgsButton.BackgroundImage = Properties.Resources.settings;
             serverArgsButton.Name = "serverArgsButton";
             serverArgsButton.UseVisualStyleBackColor = true;
             serverArgsButton.Click += serverArgsButton_Click;
             // 
             // startServerButton
             // 
-            startServerButton.BackgroundImage = Properties.Resources.start_button;
             resources.ApplyResources(startServerButton, "startServerButton");
+            startServerButton.BackgroundImage = Properties.Resources.start_button;
             startServerButton.Name = "startServerButton";
             startServerButton.UseVisualStyleBackColor = true;
             startServerButton.Click += startServerButton_Click;
@@ -103,6 +112,7 @@
             // journalButton
             // 
             resources.ApplyResources(journalButton, "journalButton");
+            journalButton.BackgroundImage = Properties.Resources.journal;
             journalButton.Name = "journalButton";
             journalButton.UseVisualStyleBackColor = true;
             journalButton.Click += journalButton_Click;
@@ -111,15 +121,15 @@
             // 
             resources.ApplyResources(ftpUrlTextBox, "ftpUrlTextBox");
             ftpUrlTextBox.Name = "ftpUrlTextBox";
-            ftpUrlTextBox.TextChanged += ftpUrlTextBox_TextChanged;
+            ftpUrlTextBox.TextChanged += FtpUrlTextBox_TextChanged;
             // 
-            // pictureBox1
+            // connectStatusPictureBox
             // 
-            resources.ApplyResources(pictureBox1, "pictureBox1");
-            pictureBox1.BackColor = Color.Transparent;
-            pictureBox1.Image = Properties.Resources.cloud_stop;
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.TabStop = false;
+            resources.ApplyResources(connectStatusPictureBox, "connectStatusPictureBox");
+            connectStatusPictureBox.BackColor = Color.Transparent;
+            connectStatusPictureBox.Image = Properties.Resources.cloud_stop;
+            connectStatusPictureBox.Name = "connectStatusPictureBox";
+            connectStatusPictureBox.TabStop = false;
             // 
             // ftpSyncProgressBar
             // 
@@ -130,12 +140,53 @@
             ftpSyncProgressBar.ProgressColor = Color.LightGreen;
             ftpSyncProgressBar.Value = 20;
             // 
+            // loggerRichTextBox
+            // 
+            resources.ApplyResources(loggerRichTextBox, "loggerRichTextBox");
+            loggerRichTextBox.Name = "loggerRichTextBox";
+            loggerRichTextBox.ReadOnly = true;
+            // 
+            // consoleButton
+            // 
+            resources.ApplyResources(consoleButton, "consoleButton");
+            consoleButton.BackgroundImage = Properties.Resources.consoleRight;
+            consoleButton.Name = "consoleButton";
+            consoleButton.UseVisualStyleBackColor = true;
+            consoleButton.Click += consoleButton_Click;
+            // 
+            // ftpUserNameTextBox
+            // 
+            resources.ApplyResources(ftpUserNameTextBox, "ftpUserNameTextBox");
+            ftpUserNameTextBox.Name = "ftpUserNameTextBox";
+            ftpUserNameTextBox.TextChanged += FtpUrlTextBox_TextChanged;
+            // 
+            // ftpPasswordTextBox
+            // 
+            resources.ApplyResources(ftpPasswordTextBox, "ftpPasswordTextBox");
+            ftpPasswordTextBox.Name = "ftpPasswordTextBox";
+            ftpPasswordTextBox.UseSystemPasswordChar = true;
+            ftpPasswordTextBox.TextChanged += FtpUrlTextBox_TextChanged;
+            // 
+            // rememberPassCheckBox
+            // 
+            resources.ApplyResources(rememberPassCheckBox, "rememberPassCheckBox");
+            rememberPassCheckBox.BackColor = Color.Transparent;
+            rememberPassCheckBox.ForeColor = SystemColors.ActiveCaption;
+            rememberPassCheckBox.Name = "rememberPassCheckBox";
+            rememberPassCheckBox.UseVisualStyleBackColor = false;
+            rememberPassCheckBox.CheckedChanged += rememberPassCheckBox_CheckedChanged;
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            BackgroundImage = Properties.Resources.background;
+            Controls.Add(rememberPassCheckBox);
+            Controls.Add(ftpPasswordTextBox);
+            Controls.Add(ftpUserNameTextBox);
+            Controls.Add(consoleButton);
             Controls.Add(ftpSyncProgressBar);
-            Controls.Add(pictureBox1);
+            Controls.Add(connectStatusPictureBox);
             Controls.Add(ftpUrlTextBox);
             Controls.Add(journalButton);
             Controls.Add(startServerButton);
@@ -145,9 +196,12 @@
             Controls.Add(russiaLanguageButton);
             Controls.Add(serverAppPathBrowseButton);
             Controls.Add(serverAppPathTextBox);
+            Controls.Add(loggerRichTextBox);
+            Icon = Properties.Resources.IconValheim;
             Name = "MainForm";
-            LocationChanged += MainForm_LocationChanged;
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            FormClosing += MainForm_FormClosing;
+            Load += MainForm_Load;
+            ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -164,7 +218,12 @@
         private FolderBrowserDialog serverAppPathBrowserDialog;
         private Button journalButton;
         private TextBox ftpUrlTextBox;
-        private PictureBox pictureBox1;
+        private PictureBox connectStatusPictureBox;
         private CustomControls.CustomProgressBar ftpSyncProgressBar;
+        private RichTextBox loggerRichTextBox;
+        private Button consoleButton;
+        private TextBox ftpUserNameTextBox;
+        private TextBox ftpPasswordTextBox;
+        private CheckBox rememberPassCheckBox;
     }
 }
