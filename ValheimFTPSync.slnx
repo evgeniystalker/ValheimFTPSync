@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="ValheimFTPSync.Test/ValheimFTPSync.Test.csproj" Id="98e75a32-a163-4453-8651-f3ec722d7c9f" />
   <Project Path="ValheimFTPSync/ValheimFTPSync.csproj" />
 </Solution>
