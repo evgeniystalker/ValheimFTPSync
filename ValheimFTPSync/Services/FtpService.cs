@@ -1,343 +1,93 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Drawing.Drawing2D;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Text;
 using ValheimFTPSync.Extensions;
 using ValheimFTPSync.Models;
 using ValheimFTPSync.Services.Interfaces;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Header;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace ValheimFTPSync.Services
 {
-    internal class FtpService
+    internal class FtpService : IFtpService
     {
-        private Uri? _uri;
-        public Uri? Uri
-        {
-            get => _uri;
-            private set
-            {
-                _uri = value;
-            }
-        }
-
-        private FtpClient? FtpClient { get; set; }
+        private IFtpClientBase FtpClient { get; set; }
         private IAppLogger Logger { get; set; }
+        private ILocalFileService LocalFileService { get; set; }
 
-        private DirectoryModel _listFiles;
-        public DirectoryModel dirModel
-        {
-            get
-            {
-                if (_listFiles == null)
-                    throw new Exception("Repite LoadFiles() or error in conncetion");
-                return _listFiles;
-            }
-            private set { _listFiles = value; }
-        }
-
-        /// <summary>
-        /// Инициализация клиента из Uri.
-        /// </summary>
-        public FtpService(IAppLogger appLogger)
+        public FtpService(IFtpClientBase ftpClient, IAppLogger appLogger, ILocalFileService localFileService)
         {
             Logger = appLogger;
+            FtpClient = ftpClient;
+            LocalFileService = localFileService;
         }
-        /// <summary>
-        /// Инициализация клиента из строки URL.
-        /// </summary>
-        public FtpService(string uri, IAppLogger appLogger)
-        {
-            SetUri(uri);
-            Logger = appLogger;
-        }
-
-
-        public void SetUri(string uriString, ICredentials? credentials = null)
-        {
-            FtpClient = null;
-            if (string.IsNullOrEmpty(uriString))
-            {
-                Logger.Warning("Cannot set URI: the value is null.");
-                return;
-            }
-            Uri? tryUri;
-
-            if (!Uri.TryCreate(uriString, UriKind.Absolute, out tryUri) && tryUri is null)
-            {
-                Logger.Warning($"Can't create URI: \"{uriString}\" is not valid.");
-                return;
-            }
-
-            if (tryUri.Scheme != Uri.UriSchemeFtp)
-            {
-                Logger.Warning($"Unsupported URI scheme: \"{tryUri.Scheme}\".");
-                return;
-            }
-
-            Uri = tryUri;
-            FtpClient = new FtpClient(Uri, credentials);
-        }
-
-        public delegate void DateTimeHandler(DateTime lastDateChanging);
-        public event DateTimeHandler DateTimeChanged;
 
         /// <summary>
         /// Пытается подключиться к FTP и возвращает пользовательское сообщение о результате.
         /// </summary>
-        public async Task<bool> TryConnectAsync()
+        public bool TryConnect(CancellationToken cancellationToken = default)
         {
             if (FtpClient is null)
                 return false;
             try
             {
-                var isSuccessful = await FtpClient.TryConnectAsync();
+                cancellationToken.ThrowIfCancellationRequested();
+                var isSuccessful = FtpClient.Connect(cancellationToken);
                 if (isSuccessful)
                     Logger.Info("Connection successful.");
                 else
-                    Logger.Info("Connection unsuccessful.");
+                {
+                    Logger.Warning("Connection unsuccessful.");
+                    bool isConnected = NetworkInterface.GetIsNetworkAvailable();
+                    if (!isConnected)
+                        Logger?.Error("Check your internet connection.");
+                }
                 return isSuccessful;
             }
-            catch (WebException wEx)
+            catch
             {
-                bool isConnected = NetworkInterface.GetIsNetworkAvailable();
-                if (!isConnected)
-                    Logger?.Error("Check your internet connection.");
-                else if (wEx.Response is FtpWebResponse ftpResponse && ftpResponse.StatusCode == FtpStatusCode.NotLoggedIn)
-                {
-                    Logger?.Error("Authentication error!");
-                    ftpResponse.Close();
-                    ftpResponse.Dispose();
-                }
-                else
-                    Logger?.Error(wEx.Message);
-
                 return false;
             }
         }
-        private DateTime GetDate(string url)
+        /// <summary>
+        /// Пытается подключиться к FTP и возвращает пользовательское сообщение о результате.
+        /// </summary>
+        public async Task<bool> TryConnectAsync(CancellationToken cancellationToken = default)
         {
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(url) as FtpWebRequest;
-            ftpWeb.Method = WebRequestMethods.Ftp.GetDateTimestamp;
-
+            if (FtpClient is null)
+                return false;
             try
             {
-                using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
-                {
-                    if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
-                        throw new Exception("Неверный код ответа при запросе даты");
-
-                    return DateTime.SpecifyKind(response.LastModified.ToUniversalTime(), DateTimeKind.Local).ToUniversalTime();//на моём ftp почему то время смещается два раза...
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        private long GetFileSize(string url)
-        {
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(url) as FtpWebRequest;
-            ftpWeb.Method = WebRequestMethods.Ftp.GetFileSize;
-            try
-            {
-                using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
-                {
-                    if (!response.WelcomeMessage.Contains("230") && response.StatusCode != FtpStatusCode.FileStatus)
-                        throw new Exception("Неверный код ответа при запросе даты");
-
-                    return response.ContentLength;
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        private DirectoryModel LoadDirectoryModel(string pathDirectory)
-        {
-            DirectoryModel dir = new DirectoryModel(pathDirectory);
-            List<string> listDirectory = GetResponseList(pathDirectory);
-            List<string> dataFilesDetails = GetResponseList(pathDirectory, WebRequestMethods.Ftp.ListDirectoryDetails);
-            foreach (var @object in listDirectory)
-            {
-                foreach (var objectDet in dataFilesDetails)
-                {
-                    if (objectDet.EndsWith(Path.GetFileName(@object)))
-                    {
-                        string objectUrl = new Uri(Uri, @object).ToString();
-                        if (objectDet.StartsWith('d'))
-                        {
-                            dir.Directories.Add(LoadDirectoryModel(objectUrl));
-                            break;
-                        }
-                        else if (objectDet.StartsWith("-r"))
-                        {
-                            dir.Files.Add(new FileModel(Path.GetFileName(objectUrl), objectUrl.ToString(), GetDate(objectUrl), GetFileSize(objectUrl)));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return dir;
-        }
-
-        /// <summary>
-        /// Скачивает все файлы с FTP в локальную папку с прогрессом и поддержкой отмены.
-        /// </summary>
-        public async Task LoadFiles(string pathSave, IProgress<(float, string, float)> progress, CancellationToken ct)
-        {
-            if (ct.IsCancellationRequested)
-                ct.ThrowIfCancellationRequested();
-            dirModel = LoadDirectoryModel(Uri.OriginalString);
-            List<FileModel> filesAll = dirModel.GetFilesInDirectoryRecursive();
-            filesAll = filesAll.Where(x => x.FileName != "StatusServer.json").ToList();
-            DateTimeChanged.Invoke(filesAll.Select(x => x.DateTimeChangedFile).Max());
-            int countFiles = 0;
-            string fileName = "";
-            Progress<float> progressOneFileLoading = new Progress<float>(prog =>
-            {
-                progress.Report(((prog + countFiles) / filesAll.Count, fileName, prog));
-            });
-            foreach (var file in filesAll)
-            {
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
-
-                fileName = file.FileName;
-                await Task.Run(() => GetFileFtp(file, pathSave, progressOneFileLoading));
-                countFiles++;
-            }
-        }
-
-        bool saveOverride = false;
-        bool cancel = false;
-
-        private List<string> GetResponseList(string url, string listDirectoryOrDetails = WebRequestMethods.Ftp.ListDirectory)
-        {
-            if (WebRequestMethods.Ftp.ListDirectory != listDirectoryOrDetails && WebRequestMethods.Ftp.ListDirectoryDetails != listDirectoryOrDetails)
-                throw new Exception("Неверный метод Ftp. Передайте только ListDirectory или ListDerectoryDetails");
-            if (FtpWebRequest.Create(url) is FtpWebRequest ftpWeb)
-            {
-                ftpWeb.Method = listDirectoryOrDetails;
-                List<string> listDirectory = null;
-                using (FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse)
-                {
-                    if (response.WelcomeMessage.Contains("230") && response.StatusCode == FtpStatusCode.OpeningData)
-                    {
-                        using StreamReader sr = new StreamReader(response.GetResponseStream());
-                        string dataFiles = sr.ReadToEnd();
-                        listDirectory = dataFiles.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
-                    }
-                }
-                return listDirectory;
-            }
-            else throw new Exception("Невозможно создать соедиенение с Ftp. Неверная ссылка.");
-        }
-
-        public event Func<TaskDialogPage, TaskDialogButton> SaveOverrideShowWindow;
-        /// <summary>
-        /// Скачивает один файл с FTP в локальную папку.
-        /// </summary>
-        public void GetFileFtp(FileModel file, string pathSave, IProgress<float> progressOneFile)
-        {
-            Uri fileNameUri = new Uri(file.FilePath);
-            var tempPath = Path.Combine(pathSave, Uri.MakeRelativeUri(fileNameUri).ToString().Replace("/", "\\"));
-            var directoryName = Path.GetDirectoryName(tempPath);
-
-            if (!Directory.Exists(directoryName))
-                CreateDirRecur(directoryName);
-
-            if (File.Exists(tempPath) && !saveOverride)
-            {
-                if (cancel)
-                {
-                    progressOneFile.Report(1);
-                    return;
-                }
-                TaskDialogButtonCollection buttons = new TaskDialogButtonCollection() { new TaskDialogButton("Да"), new TaskDialogButton("Да для всех!"), new TaskDialogButton("Нет"), new TaskDialogButton("Нет для всех!"), new TaskDialogButton("Отмена") };
-                FileInfo localFile = new FileInfo(tempPath);
-                TaskDialogPage dialog = new TaskDialogPage() { Text = $"Файл {file.FileName} уже существует в локальной папке! Перезаписать?\n1. Дата изменения: {localFile.LastWriteTime.ToString("G")} ({localFile.Length} byte).\n2. Дата изменения: {file.DateTimeChangedFile.ToLocalTime()} ({file.Length} byte). ☁", Buttons = buttons };
-                var result = SaveOverrideShowWindow.Invoke(dialog);
-                if (result == buttons[2])
-                {
-                    progressOneFile.Report(1);
-                    return;
-                }
-                else if (result == buttons[1])
-                    saveOverride = true;
-                else if (result == buttons[3])
-                {
-                    cancel = true;
-                    progressOneFile.Report(1);
-                    return;
-                }
-                else if (result == buttons[4])
-                {
-                    throw new OperationCanceledException("Отмена операции");
-                }
-            }
-
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(fileNameUri) as FtpWebRequest;
-            ftpWeb.Method = WebRequestMethods.Ftp.DownloadFile;
-
-            ftpWeb.UseBinary = true;
-            ftpWeb.ConnectionGroupName = "DownloadFTP";
-            using FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (response.StatusDescription.Contains("150") && response.StatusCode == FtpStatusCode.OpeningData)
-            {
-                using Stream streamResponse = response.GetResponseStream();
-                using FileStream writer = new FileStream(tempPath, FileMode.Create);
-
-                var lenghtBytes = response.ContentLength;
-                byte[] buffer = new byte[4096];
-
-                int oldPrecent = 0;
-                int numOfBytesRead = streamResponse.Read(buffer, 0, buffer.Length);
-                long countBytes = numOfBytesRead;
-
-                while (numOfBytesRead != 0)
-                {
-                    writer.Write(buffer, 0, numOfBytesRead);
-                    numOfBytesRead = streamResponse.Read(buffer, 0, buffer.Length);
-                    int precent = (int)((countBytes += numOfBytesRead) * 100 / lenghtBytes);
-
-                    if (precent != oldPrecent)
-                    {
-                        oldPrecent = precent;
-                        progressOneFile.Report(precent / 100f);
-                    }
-
-                }
-                writer.Flush();
-                writer.Close();
-                UpdateLocalFileAttrributeDateTime(tempPath, file.DateTimeChangedFile);
-            }
-
-            void CreateDirRecur(string path)
-            {
-                if (!Directory.Exists(path))
-                {
-                    CreateDirRecur(Path.GetDirectoryName(path));
-                    Directory.CreateDirectory(path);
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                var isSuccessful = await FtpClient.ConnectAsync(cancellationToken);
+                if (isSuccessful)
+                    Logger.Info("Connection successful.");
                 else
-                    return;
+                {
+                    Logger.Warning("Connection unsuccessful.");
+                    bool isConnected = NetworkInterface.GetIsNetworkAvailable();
+                    if (!isConnected)
+                        Logger?.Error("Check your internet connection.");
+                }
+                return isSuccessful;
             }
-        }
-
-        private void UpdateLocalFileAttrributeDateTime(string pathFile, DateTime attrDateTime)
-        {
-            FileInfo fileInfo = new FileInfo(pathFile);
-            fileInfo.LastWriteTimeUtc = attrDateTime;
-            fileInfo.LastAccessTimeUtc = attrDateTime;
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
         /// Загружает локальные файлы обратно на FTP с прогрессом и поддержкой отмены.
         /// </summary>
-        public async Task UploadFilesBack(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken token)
+     /*   public async Task UploadFilesBack(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken token)
         {
             List<string> TempDirectory = Directory.GetDirectories(pathTempDirectory, "*", SearchOption.AllDirectories).ToList();
             List<string> filesInTempDirectory = Directory.GetFiles(pathTempDirectory, "", SearchOption.AllDirectories).ToList();
@@ -375,64 +125,12 @@ namespace ValheimFTPSync.Services
                 countFiles++;
             }
 
-        }
+        }*/
 
-        private void CreateDirectoryFtp(string directoryPath)
-        {
-            try
-            {
-                FtpWebRequest ftpWeb = FtpWebRequest.Create(directoryPath) as FtpWebRequest;
-                ftpWeb.Method = WebRequestMethods.Ftp.MakeDirectory;
-                ftpWeb.GetResponse();
-            }
-            catch (WebException wEx)
-            {
-                if (!wEx.Message.Contains("550"))
-                    throw;
-            }
-
-        }
-
-        private void UploadFileFtp(string filePathTemp, Uri filePathFtp, IProgress<float> progressOneFile)
-        {
-            FtpWebRequest ftpWeb = FtpWebRequest.Create(filePathFtp) as FtpWebRequest;
-            ftpWeb.Method = WebRequestMethods.Ftp.UploadFile;
-            ftpWeb.UseBinary = true;
-            ftpWeb.ConnectionGroupName = "UploadFTP";
-            using FileStream reader = new FileStream(filePathTemp, FileMode.Open);
-            var lenghtBytes = ftpWeb.ContentLength = reader.Length;
-
-            byte[] buffer = new byte[4096];
-
-            using Stream streamRequest = ftpWeb.GetRequestStream();
-            int numOfBytesRead = reader.Read(buffer, 0, buffer.Length);
-            long countBytes = numOfBytesRead;
-            int oldPrecent = 0;
-            while (numOfBytesRead != 0)
-            {
-                streamRequest.Write(buffer, 0, numOfBytesRead);
-                numOfBytesRead = reader.Read(buffer, 0, buffer.Length);
-
-                int precent = (int)((countBytes += numOfBytesRead) * 100 / lenghtBytes);
-                if (precent != oldPrecent)
-                {
-                    oldPrecent = precent;
-                    progressOneFile.Report(precent / 100f);
-                }
-
-            }
-            streamRequest.Flush();
-            streamRequest.Close();
-            using FtpWebResponse response = ftpWeb.GetResponse() as FtpWebResponse;
-            if (!response.StatusDescription.Contains("226") && response.StatusCode != FtpStatusCode.ClosingData)
-            {
-                throw new Exception("Ошибка при загрузке файла " + filePathTemp);
-            }
-        }
         /// <summary>
         /// Удаляет все файлы и каталоги в целевой папке FTP.
         /// </summary>
-        public async Task DeleteFilesFTP(IProgress<(float, string, float)> progress, CancellationToken ct)
+/*        public async Task DeleteFilesFTP(IProgress<(float, string, float)> progress, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
                 ct.ThrowIfCancellationRequested();
@@ -471,32 +169,188 @@ namespace ValheimFTPSync.Services
                     ct.ThrowIfCancellationRequested();
             }
         }
-        /// <summary>
+*/        /// <summary>
         /// Удаляет все файлы и каталоги во временной локальной папке.
         /// </summary>
-        public async Task DeleteLocalFiles(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken ct)
+
+        public void DownloadFiles(IReadOnlyCollection<FtpFileModel> fileModels, string targetDirectoryPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken = default)
         {
-            List<string> TempDirectory = Directory.GetDirectories(pathTempDirectory, "*", SearchOption.AllDirectories).ToList();
-            List<string> filesInTempDirectory = Directory.GetFiles(pathTempDirectory, "", SearchOption.AllDirectories).ToList();
-
-            if (ct.IsCancellationRequested)
-                ct.ThrowIfCancellationRequested();
-            int count = 0;
-
-            foreach (var file in filesInTempDirectory)
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
             {
-                await Task.Run(() => File.Delete(file));
-                progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetFileName(file), 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
+                var localFilePath = Path.Combine(targetDirectoryPath, file.RelativePath).Replace("/", "\\");
+                LocalFileService.CreateDirectory(Path.GetDirectoryName(localFilePath));
+                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download);
+
+                IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
+                        progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Download)
+                        ));
+                FtpClient.DownloadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
             }
+        }
 
-            foreach (var dir in TempDirectory)
+        public async Task DownloadFilesAsync(IReadOnlyCollection<FtpFileModel> fileModels, string targetDirectoryPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
             {
-                await Task.Run(() => Directory.Delete(dir));
-                progress.Report((++count / (float)(TempDirectory.Count + filesInTempDirectory.Count), "Удалено: " + Path.GetDirectoryName(dir), 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
+                var localFilePath = Path.Combine(targetDirectoryPath, file.RelativePath).Replace("/", "\\");
+                LocalFileService.CreateDirectory(Path.GetDirectoryName(localFilePath));
+                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download, async: true);
+
+                IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
+                        progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Download)
+                        ));
+                await FtpClient.DownloadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public void UploadFiles(IReadOnlyCollection<FtpFileModel> fileModels, string sourceDirectoryPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var localFilePath = Path.Combine(sourceDirectoryPath, file.RelativePath).Replace("/", "\\");
+                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload);
+
+                IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
+                        progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Upload)
+                        ));
+
+                FtpClient.UploadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
+            }
+        }
+
+        public async Task UploadFilesAsync(IReadOnlyCollection<FtpFileModel> fileModels, string sourceDirectoryPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
+            {//сделать создание директориии.
+                cancellationToken.ThrowIfCancellationRequested();
+                var localFilePath = Path.Combine(sourceDirectoryPath, file.RelativePath).Replace("/", "\\");
+
+                if (!File.Exists(localFilePath))
+                {
+                    Logger.Error($"File not found: {localFilePath}");
+                    return;
+                }
+                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload, async: true);
+
+                var treeDirectory = Path.GetDirectoryName(file.RelativePath);
+                if (!string.IsNullOrEmpty(treeDirectory))
+                    await MakeDirectoryRecursiveAsync(treeDirectory);
+
+
+                IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
+                        progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Upload)
+                        ));
+
+                await FtpClient.UploadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public FtpDirectoryModel GetDirectoryInfo(string relativePath, CancellationToken cancellationToken = default)
+        {
+            FtpDirectoryModel dir = new FtpDirectoryModel(relativePath);
+            IEnumerable<string> listDirectory = FtpClient.ListDirectory(relativePath, cancellationToken);
+            IEnumerable<string> dataFilesDetails = FtpClient.ListDirectoryDetails(relativePath, cancellationToken);
+            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            if (listDirectory.Count() != dataFilesDetails.Count())
+                throw new InvalidOperationException("The list of files and the list of parts do not match in terms of quantity.");
+            foreach (var itemUrl in listDirectory)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var detail = dictionaryDetails[Path.GetFileName(itemUrl)];
+                if (detail.StartsWith('d'))
+                {
+                    dir.Directories.Add(GetDirectoryInfo(itemUrl, cancellationToken));
+                }
+                else if (detail.StartsWith("-r"))
+                {
+                    var dateTimeChanged = FtpClient.GetDateTimeStamp(itemUrl, cancellationToken);
+                    var fileSize = FtpClient.GetFileSize(itemUrl, cancellationToken);
+                    dir.Files.Add(new FtpFileModel(Path.GetFileName(itemUrl), itemUrl, dateTimeChanged, fileSize));
+                }
+            }
+            return dir;
+        }
+
+        public async Task<FtpDirectoryModel> GetDirectoryInfoAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            FtpDirectoryModel dir = new FtpDirectoryModel(relativePath);
+            IEnumerable<string> listDirectory = await FtpClient.ListDirectoryAsync(relativePath, cancellationToken).ConfigureAwait(false);
+            IEnumerable<string> dataFilesDetails = await FtpClient.ListDirectoryDetailsAsync(relativePath, cancellationToken).ConfigureAwait(false);
+            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            if (listDirectory.Count() != dataFilesDetails.Count())
+                throw new InvalidOperationException("The list of files and the list of parts do not match in terms of quantity.");
+            foreach (var itemUrl in listDirectory)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var detail = dictionaryDetails[Path.GetFileName(itemUrl)];
+                if (detail.StartsWith('d'))
+                {
+                    dir.Directories.Add(await GetDirectoryInfoAsync(itemUrl, cancellationToken).ConfigureAwait(false));
+                }
+                else if (detail.StartsWith("-r"))
+                {
+                    var dateTimeChanged = await FtpClient.GetDateTimeStampAsync(itemUrl, cancellationToken).ConfigureAwait(false);
+                    var fileSize = await FtpClient.GetFileSizeAsync(itemUrl, cancellationToken).ConfigureAwait(false);
+                    dir.Files.Add(new FtpFileModel(Path.GetFileName(itemUrl), itemUrl, dateTimeChanged, fileSize));
+                }
+            }
+            return dir;
+        }
+
+        private bool IsDirectory(string relativePath, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<string> dataFilesDetails = FtpClient.ListDirectoryDetails(relativePath, cancellationToken);
+            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            var detail = dictionaryDetails[Path.GetFileName(relativePath)];
+            return detail.StartsWith('d');
+        }
+        private async Task<bool> IsDirectoryAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            var rootDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+            IEnumerable<string> dataFilesDetails = await FtpClient.ListDirectoryDetailsAsync(rootDirectory, cancellationToken).ConfigureAwait(false);
+            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            dictionaryDetails.TryGetValue(Path.GetFileName(relativePath), out string? detail);
+            return detail?.StartsWith('d') ?? false;
+        }
+
+        public void MakeDirectoryRecursive(string relativePath, CancellationToken cancellationToken = default)
+        {
+            Stack<string> recursivePath = new Stack<string>();
+            var parentRelativePath = relativePath;
+            while (!string.IsNullOrEmpty(parentRelativePath))
+            {
+                recursivePath.Push(parentRelativePath);
+                parentRelativePath = Path.GetDirectoryName(parentRelativePath);
+            }
+            while (recursivePath.TryPop(out parentRelativePath) && !string.IsNullOrEmpty(parentRelativePath))
+            {
+                if (!IsDirectory(parentRelativePath))
+                    FtpClient.MakeDirectory(parentRelativePath, cancellationToken);
+            }
+        }
+        public async Task MakeDirectoryRecursiveAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            Stack<string> recursivePath = new Stack<string>();
+            var parentRelativePath = relativePath;
+            while (!string.IsNullOrEmpty(parentRelativePath))
+            {
+                recursivePath.Push(parentRelativePath);
+                parentRelativePath = Path.GetDirectoryName(parentRelativePath);
+            }
+            bool isDirectory = true;
+            while (recursivePath.TryPop(out parentRelativePath) && !string.IsNullOrEmpty(parentRelativePath))
+            {
+                if (isDirectory)
+                    isDirectory = await IsDirectoryAsync(parentRelativePath).ConfigureAwait(false);
+                if (!isDirectory)
+                    await FtpClient.MakeDirectoryAsync(parentRelativePath, cancellationToken).ConfigureAwait(false);
             }
         }
     }

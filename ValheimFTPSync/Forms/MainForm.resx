@@ -303,31 +303,31 @@
   <data name="&gt;&gt;serverArgsButton.ZOrder" xml:space="preserve">
     <value>9</value>
   </data>
-  <data name="startServerButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+  <data name="serverButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
-  <data name="startServerButton.BackgroundImageLayout" type="System.Windows.Forms.ImageLayout, System.Windows.Forms">
+  <data name="serverButton.BackgroundImageLayout" type="System.Windows.Forms.ImageLayout, System.Windows.Forms">
     <value>Zoom</value>
   </data>
-  <data name="startServerButton.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="serverButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>679, 124</value>
   </data>
-  <data name="startServerButton.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="serverButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
   </data>
-  <data name="startServerButton.TabIndex" type="System.Int32, mscorlib">
+  <data name="serverButton.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
   </data>
-  <data name="&gt;&gt;startServerButton.Name" xml:space="preserve">
-    <value>startServerButton</value>
+  <data name="&gt;&gt;serverButton.Name" xml:space="preserve">
+    <value>serverButton</value>
   </data>
-  <data name="&gt;&gt;startServerButton.Type" xml:space="preserve">
+  <data name="&gt;&gt;serverButton.Type" xml:space="preserve">
     <value>System.Windows.Forms.Button, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;startServerButton.Parent" xml:space="preserve">
+  <data name="&gt;&gt;serverButton.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;startServerButton.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;serverButton.ZOrder" xml:space="preserve">
     <value>8</value>
   </data>
   <metadata name="serverAppPathBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

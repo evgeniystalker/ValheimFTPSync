@@ -14,16 +14,16 @@ namespace ValheimFTPSync
     public partial class MainForm : Form
     {
         private AppGlobalSettingManager SettingManager { get; set; }
-        private FtpService FtpService { get; set; }
+        private ISyncService SyncService { get; set; }
         private IAppLogger Logger { get; set; }
 
+        private CancellationTokenSource? CancellationTokenSource { get; set; }
         public MainForm()
         {
             InitializeComponent();
             InitializeTimer();
             SettingManager = new AppGlobalSettingManager();
             Logger = new RichTextBoxLogger(loggerRichTextBox);
-            FtpService = new FtpService(Logger);
         }
 
         private void ChangeLanguage(string langCode)
@@ -97,10 +97,25 @@ namespace ValheimFTPSync
             }
         }
 
-        private void startServerButton_Click(object sender, EventArgs e)
+
+        private void serverButton_Click(object sender, EventArgs e)
         {
-            ftpPasswordTextBox.Size = new Size(ftpPasswordTextBox.Size.Width + 23, ftpPasswordTextBox.Size.Height);
+            if (CancellationTokenSource == null)
+                startServerButton_Click(sender, e);
+            else
+                CancellationTokenSource.CancelAsync();
+        }
+
+        private void startServerButton_Click(object? sender, EventArgs e)
+        {
             SettingManager.Save();
+            CancellationTokenSource = new CancellationTokenSource();
+            RunningState(true);
+
+        }
+        private void stopServerButton_Click(object? sender, EventArgs e)
+        {
+            RunningState(false);
         }
 
         private void journalButton_Click(object sender, EventArgs e)
@@ -127,8 +142,10 @@ namespace ValheimFTPSync
             ICredentials? credentials = null;
             if (!string.IsNullOrEmpty(ftpUserNameTextBox.Text) || !string.IsNullOrEmpty(ftpPasswordTextBox.Text))
                 credentials = new NetworkCredential(ftpUserNameTextBox.Text, ftpPasswordTextBox.Text);
-            FtpService.SetUri(ftpUrlTextBox.Text, credentials);
-            var isConnect = await FtpService.TryConnectAsync();
+            IFtpClientFactory clientFactory = new FtpClientFactory(Logger);
+            var client = clientFactory.CreateFtpClient(ftpUrlTextBox.Text, credentials);
+            FtpService ftpService = new FtpService(client, Logger, new LocalFileService());
+            var isConnect = await (ftpService.TryConnectAsync() ?? Task.FromResult(false));
             Invoke(new Action(() =>
             {
                 if (isConnect)
@@ -154,7 +171,7 @@ namespace ValheimFTPSync
                     SettingManager.AppSettingManager.FtpPassword = ftpPasswordTextBox.Text;
                     break;
             }
-            
+
             connectStatusPictureBox.Image = Properties.Resources.cloud_load;
         }
 
@@ -194,6 +211,11 @@ namespace ValheimFTPSync
         private void rememberPassCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             SettingManager.AppSettingManager.RememberPassword = rememberPassCheckBox.Checked;
+        }
+        public void RunningState(bool enable)
+        {
+            ftpPasswordTextBox.Enabled = ftpUserNameTextBox.Enabled = ftpUrlTextBox.Enabled = serverAppPathTextBox.Enabled = serverAppPathBrowseButton.Enabled = enable;
+            serverButton.BackgroundImage = enable ? Properties.Resources.stop_button : Properties.Resources.start_button;
         }
     }
 }

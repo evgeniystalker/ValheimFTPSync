@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
-using System.Reflection;
-using System.Text;
+﻿using System.Net;
 using ValheimFTPSync.Models;
 using ValheimFTPSync.Services.Interfaces;
 
 namespace ValheimFTPSync.Services
 {
-    internal class LoggingFtpClient : IFtpClientAsync, IFtpClient
+    internal class LoggingFtpClient : IFtpClientBase
     {
-        IAppLogger _logger;
-        FtpClient _inner;
+        readonly IAppLogger _logger;
+        readonly IFtpClientBase _inner;
 
         public event EventHandler<TransferProgress> ProgressChanged
         {
@@ -21,13 +16,13 @@ namespace ValheimFTPSync.Services
         }
 
 
-        public LoggingFtpClient(FtpClient ftpClient, IAppLogger appLogger)
+        public LoggingFtpClient(IFtpClientBase ftpClient, IAppLogger appLogger)
         {
             _logger = appLogger;
             _inner = ftpClient;
         }
 
-        public T Execute<T>(string operation, Func<T> action)
+        public T? Execute<T>(string operation, Func<T> action)
         {
             try
             {
@@ -36,20 +31,27 @@ namespace ValheimFTPSync.Services
             catch (OperationCanceledException)
             {
                 _logger.Info($"Operation cancelled: {operation}");
-                throw;
+                return default;
+            }
+            catch (WebException ex) when (ex.Response is FtpWebResponse ftpResponse && ftpResponse.StatusCode == FtpStatusCode.NotLoggedIn)
+            {
+                _logger.Warning($"Authentication error in {operation}!");
+                ftpResponse.Close();
+                ftpResponse.Dispose();
+                return default;
             }
             catch (WebException ex) when (ex.Response is FtpWebResponse ftpResponse)
             {
                 var statusCode = ftpResponse.StatusCode;
                 ftpResponse.Close();
                 ftpResponse.Dispose();
-                _logger.Error($"FTP error in '{operation}' (status: {statusCode}) : {ex.Message}");
-                throw;
+                _logger.Error($"Ftp error in '{operation}' (status: {statusCode}) : {ex.Message}");
+                return default;
             }
             catch (Exception ex)
             {
-                _logger.Error($"Error in '{operation}': {ex.Message}");
-                throw;
+                _logger.Error($"Unexpected error in '{operation}': {ex.Message}");
+                return default;
             }
         }
 
@@ -58,7 +60,7 @@ namespace ValheimFTPSync.Services
             Execute<object>(operation, () => { action(); return null!; });
         }
 
-        private async Task<T> ExecuteAsync<T>(string operation, Func<Task<T>> action)
+        private async Task<T?> ExecuteAsync<T>(string operation, Func<Task<T>> action)
         {
             try
             {
@@ -67,20 +69,27 @@ namespace ValheimFTPSync.Services
             catch (OperationCanceledException)
             {
                 _logger.Info($"Operation cancelled: {operation}");
-                throw;
+                return default;
+            }
+            catch (WebException ex) when (ex.Response is FtpWebResponse ftpResponse && ftpResponse.StatusCode == FtpStatusCode.NotLoggedIn)
+            {
+                _logger.Warning($"Authentication error in {operation}!");
+                ftpResponse.Close();
+                ftpResponse.Dispose();
+                return default;
             }
             catch (WebException ex) when (ex.Response is FtpWebResponse ftpResponse)
             {
                 var statusCode = ftpResponse.StatusCode;
                 ftpResponse.Close();
                 ftpResponse.Dispose();
-                _logger.Error($"FTP error in '{operation}' (status: {statusCode}) : {ex.Message}");
-                throw;
+                _logger.Error($"Ftp error in '{operation}' (status: {statusCode}) : {ex.Message}");
+                return default;
             }
             catch (Exception ex)
             {
-                _logger.Error($"Error in '{operation}': {ex.Message}");
-                throw;
+                _logger.Error($"Unexpected error in '{operation}': {ex.Message}");
+                return default;
             }
         }
 
@@ -89,136 +98,124 @@ namespace ValheimFTPSync.Services
             await ExecuteAsync<object>(operation, async () => { await action(); return null!; });
         }
 
-        public async Task DeleteFileAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task DeleteFileAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                $"{nameof(DeleteFileAsync)}({absolutePath})",
-                () => _inner.DeleteFileAsync(absolutePath, cancellationToken));
+            await ExecuteAsync($"{nameof(DeleteFileAsync)}({relativePath})", () => _inner.DeleteFileAsync(relativePath, cancellationToken));
         }
 
-        public async Task<IEnumerable<string>> ListDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> ListDirectoryAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            return await ExecuteAsync(
-                $"{nameof(ListDirectoryAsync)}({absolutePath})",
-                () => _inner.ListDirectoryAsync(absolutePath, cancellationToken));
+            return await ExecuteAsync($"{nameof(ListDirectoryAsync)}({relativePath})", () => _inner.ListDirectoryAsync(relativePath, cancellationToken)) ?? Enumerable.Empty<string>();
         }
 
-        public async Task<IEnumerable<string>> ListDirectoryDetailsAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> ListDirectoryDetailsAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            return await ExecuteAsync(
-                $"{nameof(ListDirectoryDetailsAsync)}({absolutePath})",
-                () => _inner.ListDirectoryDetailsAsync(absolutePath, cancellationToken));
+            return await ExecuteAsync($"{nameof(ListDirectoryDetailsAsync)}({relativePath})", () => _inner.ListDirectoryDetailsAsync(relativePath, cancellationToken)) ?? Enumerable.Empty<string>(); ;
         }
 
-        public async Task MakeDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task MakeDirectoryAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                $"{nameof(MakeDirectoryAsync)}({absolutePath})",
-                () => _inner.MakeDirectoryAsync(absolutePath, cancellationToken));
+            await ExecuteAsync($"{nameof(MakeDirectoryAsync)}({relativePath})", () => _inner.MakeDirectoryAsync(relativePath, cancellationToken));
         }
 
-        public async Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task DownloadFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                $"{nameof(DownloadFileAsync)}({absolutePath})",
-                () => _inner.DownloadFileAsync(absolutePath, stream, progress, cancellationToken));
+            await ExecuteAsync($"{nameof(DownloadFileAsync)}({relativePath})", () => _inner.DownloadFileAsync(relativePath, stream, progress, cancellationToken));
         }
 
-        public async Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task UploadFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                $"{nameof(UploadFileAsync)}({absolutePath})",
-                () => _inner.UploadFileAsync(absolutePath, stream, progress, cancellationToken));
+            await ExecuteAsync($"{nameof(UploadFileAsync)}({relativePath})", () => _inner.UploadFileAsync(relativePath, stream, progress, cancellationToken));
         }
 
-        public async Task AppendFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task AppendFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                 $"{nameof(AppendFileAsync)}({absolutePath})",
-                 () => _inner.AppendFileAsync(absolutePath, stream, progress, cancellationToken));
+            await ExecuteAsync($"{nameof(AppendFileAsync)}({relativePath})", () => _inner.AppendFileAsync(relativePath, stream, progress, cancellationToken));
         }
 
-        public async Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<DateTime> GetDateTimeStampAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            return await ExecuteAsync(
-                 $"{nameof(GetDateTimeStampAsync)}({absolutePath})",
-                 () => _inner.GetDateTimeStampAsync(absolutePath, cancellationToken));
+            return await ExecuteAsync($"{nameof(GetDateTimeStampAsync)}({relativePath})", () => _inner.GetDateTimeStampAsync(relativePath, cancellationToken));
         }
 
-        public async Task<long> GetFileSizeAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task<long> GetFileSizeAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            return await ExecuteAsync(
-                 $"{nameof(GetFileSizeAsync)}({absolutePath})",
-                 () => _inner.GetFileSizeAsync(absolutePath, cancellationToken));
+            return await ExecuteAsync($"{nameof(GetFileSizeAsync)}({relativePath})", () => _inner.GetFileSizeAsync(relativePath, cancellationToken));
         }
 
-        public async Task RemoveDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default)
+        public async Task RemoveDirectoryAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                 $"{nameof(RemoveDirectoryAsync)}({absolutePath})",
-                 () => _inner.RemoveDirectoryAsync(absolutePath, cancellationToken));
+            await ExecuteAsync($"{nameof(RemoveDirectoryAsync)}({relativePath})", () => _inner.RemoveDirectoryAsync(relativePath, cancellationToken));
         }
 
-        public async Task RenameAsync(string absolutePath, string name, CancellationToken cancellationToken = default)
+        public async Task RenameAsync(string relativePath, string name, CancellationToken cancellationToken = default)
         {
-            await ExecuteAsync(
-                 $"{nameof(RenameAsync)}({absolutePath})",
-                 () => _inner.RenameAsync(absolutePath, name, cancellationToken));
+            await ExecuteAsync($"{nameof(RenameAsync)}({relativePath})", () => _inner.RenameAsync(relativePath, name, cancellationToken));
         }
 
-        public void AppendFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task<bool> ConnectAsync(CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(AppendFile)}({absolutePath})", () => _inner.AppendFile(absolutePath, stream, progress, cancellationToken));
+            return await ExecuteAsync($"{nameof(ConnectAsync)}", () => _inner.ConnectAsync(cancellationToken));
         }
 
-        public void DeleteFile(string absolutePath, CancellationToken cancellationToken = default)
+        public void AppendFile(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(DeleteFile)}({absolutePath})", () => _inner.DeleteFile(absolutePath, cancellationToken));
+            Execute($"{nameof(AppendFile)}({relativePath})", () => _inner.AppendFile(relativePath, stream, progress, cancellationToken));
         }
 
-        public void DownloadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public void DeleteFile(string relativePath, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(DownloadFile)}({absolutePath})", () => _inner.DownloadFile(absolutePath, stream, progress, cancellationToken));
+            Execute($"{nameof(DeleteFile)}({relativePath})", () => _inner.DeleteFile(relativePath, cancellationToken));
         }
 
-        public DateTime GetDateTimeStamp(string absolutePath, CancellationToken cancellationToken = default)
+        public void DownloadFile(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
-            return Execute($"{nameof(GetDateTimeStamp)}({absolutePath})", () => _inner.GetDateTimeStamp(absolutePath, cancellationToken));
+            Execute($"{nameof(DownloadFile)}({relativePath})", () => _inner.DownloadFile(relativePath, stream, progress, cancellationToken));
         }
 
-        public long GetFileSize(string absolutePath, CancellationToken cancellationToken = default)
+        public DateTime GetDateTimeStamp(string relativePath, CancellationToken cancellationToken = default)
         {
-            return Execute($"{nameof(GetFileSize)}({absolutePath})", () => _inner.GetFileSize(absolutePath, cancellationToken));
+            return Execute($"{nameof(GetDateTimeStamp)}({relativePath})", () => _inner.GetDateTimeStamp(relativePath, cancellationToken));
         }
 
-        public IEnumerable<string> ListDirectory(string absolutePath, CancellationToken cancellationToken = default)
+        public long GetFileSize(string relativePath, CancellationToken cancellationToken = default)
         {
-            return Execute($"{nameof(ListDirectory)}({absolutePath})", () => _inner.ListDirectory(absolutePath, cancellationToken));
+            return Execute($"{nameof(GetFileSize)}({relativePath})", () => _inner.GetFileSize(relativePath, cancellationToken));
         }
 
-        public IEnumerable<string> ListDirectoryDetails(string absolutePath, CancellationToken cancellationToken = default)
+        public IEnumerable<string> ListDirectory(string relativePath, CancellationToken cancellationToken = default)
         {
-            return Execute($"{nameof(ListDirectoryDetails)}({absolutePath})", () => _inner.ListDirectoryDetails(absolutePath, cancellationToken));
+            return Execute($"{nameof(ListDirectory)}({relativePath})", () => _inner.ListDirectory(relativePath, cancellationToken)) ?? Enumerable.Empty<string>(); ;
         }
 
-        public void MakeDirectory(string absolutePath, CancellationToken cancellationToken = default)
+        public IEnumerable<string> ListDirectoryDetails(string relativePath, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(MakeDirectory)}({absolutePath})", () => _inner.MakeDirectory(absolutePath, cancellationToken));
+            return Execute($"{nameof(ListDirectoryDetails)}({relativePath})", () => _inner.ListDirectoryDetails(relativePath, cancellationToken)) ?? Enumerable.Empty<string>(); ;
         }
 
-        public void RemoveDirectory(string absolutePath, CancellationToken cancellationToken = default)
+        public void MakeDirectory(string relativePath, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(RemoveDirectory)}({absolutePath})", () => _inner.RemoveDirectory(absolutePath, cancellationToken));
+            Execute($"{nameof(MakeDirectory)}({relativePath})", () => _inner.MakeDirectory(relativePath, cancellationToken));
         }
 
-        public void Rename(string absolutePath, string name, CancellationToken cancellationToken = default)
+        public void RemoveDirectory(string relativePath, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(Rename)}({absolutePath})", () => _inner.Rename(absolutePath, name, cancellationToken));
+            Execute($"{nameof(RemoveDirectory)}({relativePath})", () => _inner.RemoveDirectory(relativePath, cancellationToken));
         }
 
-        public void UploadFile(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        public void Rename(string relativePath, string name, CancellationToken cancellationToken = default)
         {
-            Execute($"{nameof(UploadFile)}({absolutePath})", () => _inner.UploadFile(absolutePath, stream, progress, cancellationToken));
+            Execute($"{nameof(Rename)}({relativePath})", () => _inner.Rename(relativePath, name, cancellationToken));
+        }
+
+        public void UploadFile(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default)
+        {
+            Execute($"{nameof(UploadFile)}({relativePath})", () => _inner.UploadFile(relativePath, stream, progress, cancellationToken));
+        }
+
+        public bool Connect(CancellationToken cancellationToken = default)
+        {
+            return Execute($"{nameof(Connect)}", () => _inner.Connect(cancellationToken));
         }
     }
 }

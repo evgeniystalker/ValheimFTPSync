@@ -7,27 +7,14 @@ namespace ValheimFTPSync.Extensions
 {
     internal static class DirectoryExtensions
     {
-        public static List<FileModel> GetFilesInDirectoryRecursive(this DirectoryModel dir)
+        public static IEnumerable<FtpFileModel> GetFilesInDirectoryRecursive(this FtpDirectoryModel dir)
         {
-            List<FileModel> files = new List<FileModel>();
-            files.AddRange(dir.Files);
-            foreach (var recDir in dir.Directories)
-            {
-                files.AddRange(GetFilesInDirectoryRecursive(recDir));
-            }
-
-            return files;
+            return dir.Files.Concat(dir.Directories.SelectMany(GetFilesInDirectoryRecursive));
         }
 
-        public static List<DirectoryModel> GetDirectoryRecursive(this DirectoryModel dir)
+        public static IEnumerable<FtpDirectoryModel> GetDirectoryRecursive(this FtpDirectoryModel dir)
         {
-            List<DirectoryModel> directories = new List<DirectoryModel>();
-            directories.AddRange(dir.Directories);
-            foreach (var recDir in dir.Directories)
-            {
-                directories.AddRange(GetDirectoryRecursive(recDir));
-            }
-            return directories;
+            return dir.Directories.Concat(dir.Directories.SelectMany(GetDirectoryRecursive));
         }
     }
 }

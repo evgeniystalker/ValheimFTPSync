@@ -8,18 +8,17 @@ namespace ValheimFTPSync.Services.Interfaces
 {
     internal interface IFtpClientAsync
     {
-        Task AppendFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
-        Task DeleteFileAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task DownloadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
-        Task<DateTime> GetDateTimeStampAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task<long> GetFileSizeAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task<IEnumerable<string>> ListDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task<IEnumerable<string>> ListDirectoryDetailsAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task MakeDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task RemoveDirectoryAsync(string absolutePath, CancellationToken cancellationToken = default);
-        Task RenameAsync(string absolutePath, string name, CancellationToken cancellationToken = default);
-        Task UploadFileAsync(string absolutePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
-
-        public event EventHandler<TransferProgress> ProgressChanged;
+        Task AppendFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
+        Task DeleteFileAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task DownloadFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
+        Task<DateTime> GetDateTimeStampAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task<long> GetFileSizeAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> ListDirectoryAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> ListDirectoryDetailsAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task MakeDirectoryAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task RemoveDirectoryAsync(string relativePath, CancellationToken cancellationToken = default);
+        Task RenameAsync(string relativePath, string name, CancellationToken cancellationToken = default);
+        Task UploadFileAsync(string relativePath, Stream stream, IProgress<TransferProgress>? progress = null, CancellationToken cancellationToken = default);
+        Task<bool> ConnectAsync(CancellationToken cancellationToken = default);
     }
 }

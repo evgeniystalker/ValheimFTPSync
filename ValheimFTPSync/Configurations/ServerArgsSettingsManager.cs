@@ -33,7 +33,7 @@ namespace ValheimFTPSync.Configuration
             Batchmode = Properties.ServerArgsSettings.Default.Batchmode;
             Name = Properties.ServerArgsSettings.Default.Name;
             Port = Properties.ServerArgsSettings.Default.Port;
-            World =  Properties.ServerArgsSettings.Default.World;
+            World = Properties.ServerArgsSettings.Default.World;
             Password = Properties.ServerArgsSettings.Default.Password == (string)Properties.ServerArgsSettings.Default.Properties[nameof(Password)].DefaultValue ? Properties.ServerArgsSettings.Default.Password : dpapiEncryptionService.Decrypt(Properties.ServerArgsSettings.Default.Password);
             Crossplay = Properties.ServerArgsSettings.Default.Crossplay;
             Savedir = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
@@ -128,7 +128,9 @@ namespace ValheimFTPSync.Configuration
             }
             foreach (string name in stringParams)
             {
-                comandLine.Add(name + " " + GetParamValue<string>(name));
+                var value = GetParamValue<string>(name);
+                if (string.IsNullOrEmpty(value))
+                    comandLine.Add(name + " " + value);
             }
             foreach (string name in boolParams)
             {

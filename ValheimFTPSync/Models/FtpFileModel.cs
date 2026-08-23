@@ -4,16 +4,16 @@ using System.Text;
 
 namespace ValheimFTPSync.Models
 {
-    internal class FileModel
+    internal class FtpFileModel
     {
             public string FileName;
-            public string FilePath;
+            public string RelativePath;
             public DateTime DateTimeChangedFile;
             public long Length;
-            public FileModel(string fileName, string filePath, DateTime dateOfChanged, long lenght)
+            public FtpFileModel(string fileName, string filePath, DateTime dateOfChanged, long lenght)
             {
                 FileName = fileName;
-                FilePath = filePath;
+                RelativePath = filePath;
                 DateTimeChangedFile = dateOfChanged;
                 Length = lenght;
             }

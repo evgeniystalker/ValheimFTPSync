@@ -35,7 +35,7 @@
             usLanguageButton = new Button();
             kzLanguageButton = new Button();
             serverArgsButton = new Button();
-            startServerButton = new Button();
+            serverButton = new Button();
             serverAppPathBrowserDialog = new FolderBrowserDialog();
             journalButton = new Button();
             ftpUrlTextBox = new TextBox();
@@ -97,13 +97,13 @@
             serverArgsButton.UseVisualStyleBackColor = true;
             serverArgsButton.Click += serverArgsButton_Click;
             // 
-            // startServerButton
+            // serverButton
             // 
-            resources.ApplyResources(startServerButton, "startServerButton");
-            startServerButton.BackgroundImage = Properties.Resources.start_button;
-            startServerButton.Name = "startServerButton";
-            startServerButton.UseVisualStyleBackColor = true;
-            startServerButton.Click += startServerButton_Click;
+            resources.ApplyResources(serverButton, "serverButton");
+            serverButton.BackgroundImage = Properties.Resources.start_button;
+            serverButton.Name = "serverButton";
+            serverButton.UseVisualStyleBackColor = true;
+            serverButton.Click += serverButton_Click;
             // 
             // serverAppPathBrowserDialog
             // 
@@ -189,7 +189,7 @@
             Controls.Add(connectStatusPictureBox);
             Controls.Add(ftpUrlTextBox);
             Controls.Add(journalButton);
-            Controls.Add(startServerButton);
+            Controls.Add(serverButton);
             Controls.Add(serverArgsButton);
             Controls.Add(kzLanguageButton);
             Controls.Add(usLanguageButton);
@@ -214,7 +214,7 @@
         private Button usLanguageButton;
         private Button kzLanguageButton;
         private Button serverArgsButton;
-        private Button startServerButton;
+        private Button serverButton;
         private FolderBrowserDialog serverAppPathBrowserDialog;
         private Button journalButton;
         private TextBox ftpUrlTextBox;

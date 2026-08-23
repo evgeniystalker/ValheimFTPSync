@@ -1,6 +1,6 @@
 ﻿namespace ValheimFTPSync.Models
 {
-    internal class TransferProgress
+    internal readonly struct TransferProgress
     {
         public TransferProgress(long bytesTransferred, long totalBytes)
         {
@@ -8,7 +8,7 @@
             TotalBytes = totalBytes;
         }
 
-        public int Percent => TotalBytes > 0 ? (int)(TransferredBytes / TotalBytes * 100)  : 0;
+        public int Percent => TotalBytes > 0 ? (int)(TransferredBytes * 100 / TotalBytes ) : 0;
         public long TransferredBytes { get; }
         public long TotalBytes { get; }
     }
