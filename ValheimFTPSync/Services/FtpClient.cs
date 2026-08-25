@@ -378,19 +378,20 @@ namespace ValheimFTPSync.Services
             request.ConnectionGroupName = "UploadFTP";
 
             var bytesLength = request.ContentLength = stream.Length;
-            using Stream streamRequest = request.GetRequestStream() ?? throw new InvalidOperationException("Request stream is null.");
-
-            byte[] buffer = new byte[4096];
-            long bytesWritten = 0;
-            int bytesRead;
-            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+            using (Stream streamRequest = request.GetRequestStream() ?? throw new InvalidOperationException("Request stream is null."))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                streamRequest.Write(buffer, 0, bytesRead);
-                bytesWritten += bytesRead;
-                var transfer = new TransferProgress(bytesWritten, bytesLength);
-                progress?.Report(transfer);
-                ProgressChanged?.Invoke(this, transfer);
+                byte[] buffer = new byte[4096];
+                long bytesWritten = 0;
+                int bytesRead;
+                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    streamRequest.Write(buffer, 0, bytesRead);
+                    bytesWritten += bytesRead;
+                    var transfer = new TransferProgress(bytesWritten, bytesLength);
+                    progress?.Report(transfer);
+                    ProgressChanged?.Invoke(this, transfer);
+                }
             }
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }
@@ -408,19 +409,20 @@ namespace ValheimFTPSync.Services
             request.ConnectionGroupName = "UploadFTP";
 
             var bytesLength = request.ContentLength = stream.Length;
-            await using Stream streamRequest = await request.GetRequestStreamAsync().ConfigureAwait(false) ?? throw new InvalidOperationException("Request stream is null.");
-
-            byte[] buffer = new byte[4096];
-            long bytesWritten = 0;
-            int bytesRead;
-            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) != 0)
+            await using (Stream streamRequest = await request.GetRequestStreamAsync().ConfigureAwait(false) ?? throw new InvalidOperationException("Request stream is null."))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                await streamRequest.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
-                bytesWritten += bytesRead;
-                var transfer = new TransferProgress(bytesWritten, bytesLength);
-                progress?.Report(transfer);
-                ProgressChanged?.Invoke(this, transfer);
+                byte[] buffer = new byte[4096];
+                long bytesWritten = 0;
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) != 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await streamRequest.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+                    bytesWritten += bytesRead;
+                    var transfer = new TransferProgress(bytesWritten, bytesLength);
+                    progress?.Report(transfer);
+                    ProgressChanged?.Invoke(this, transfer);
+                }
             }
             using FtpWebResponse response = await request.GetResponseAsync().ConfigureAwait(false) as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
         }

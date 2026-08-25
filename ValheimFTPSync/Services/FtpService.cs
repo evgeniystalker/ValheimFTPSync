@@ -216,6 +216,10 @@ namespace ValheimFTPSync.Services
                 var localFilePath = Path.Combine(sourceDirectoryPath, file.RelativePath).Replace("/", "\\");
                 using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload);
 
+                var treeDirectory = Path.GetDirectoryName(file.RelativePath);
+                if (!string.IsNullOrEmpty(treeDirectory))
+                    MakeDirectoryRecursive(treeDirectory);
+
                 IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
                         progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Upload)
                         ));
@@ -235,7 +239,7 @@ namespace ValheimFTPSync.Services
                 if (!File.Exists(localFilePath))
                 {
                     Logger.Error($"File not found: {localFilePath}");
-                    return;
+                    return;///
                 }
                 using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload, async: true);
 
@@ -257,7 +261,7 @@ namespace ValheimFTPSync.Services
             FtpDirectoryModel dir = new FtpDirectoryModel(relativePath);
             IEnumerable<string> listDirectory = FtpClient.ListDirectory(relativePath, cancellationToken);
             IEnumerable<string> dataFilesDetails = FtpClient.ListDirectoryDetails(relativePath, cancellationToken);
-            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            Dictionary<string, string> dictionaryDetails = ParseToDictionary(dataFilesDetails);
             if (listDirectory.Count() != dataFilesDetails.Count())
                 throw new InvalidOperationException("The list of files and the list of parts do not match in terms of quantity.");
             foreach (var itemUrl in listDirectory)
@@ -283,7 +287,7 @@ namespace ValheimFTPSync.Services
             FtpDirectoryModel dir = new FtpDirectoryModel(relativePath);
             IEnumerable<string> listDirectory = await FtpClient.ListDirectoryAsync(relativePath, cancellationToken).ConfigureAwait(false);
             IEnumerable<string> dataFilesDetails = await FtpClient.ListDirectoryDetailsAsync(relativePath, cancellationToken).ConfigureAwait(false);
-            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            Dictionary<string, string> dictionaryDetails = ParseToDictionary(dataFilesDetails);
             if (listDirectory.Count() != dataFilesDetails.Count())
                 throw new InvalidOperationException("The list of files and the list of parts do not match in terms of quantity.");
             foreach (var itemUrl in listDirectory)
@@ -306,16 +310,23 @@ namespace ValheimFTPSync.Services
 
         private bool IsDirectory(string relativePath, CancellationToken cancellationToken = default)
         {
-            IEnumerable<string> dataFilesDetails = FtpClient.ListDirectoryDetails(relativePath, cancellationToken);
-            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
-            var detail = dictionaryDetails[Path.GetFileName(relativePath)];
-            return detail.StartsWith('d');
+            var rootDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+            IEnumerable<string> dataFilesDetails = FtpClient.ListDirectoryDetails(rootDirectory, cancellationToken);
+            Dictionary<string, string> dictionaryDetails = ParseToDictionary(dataFilesDetails);
+            dictionaryDetails.TryGetValue(Path.GetFileName(relativePath), out string? detail);
+            return detail?.StartsWith('d') ?? false;
         }
+
+        private static Dictionary<string, string> ParseToDictionary(IEnumerable<string> dataFilesDetails)
+        {
+            return dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+        }
+
         private async Task<bool> IsDirectoryAsync(string relativePath, CancellationToken cancellationToken = default)
         {
             var rootDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
             IEnumerable<string> dataFilesDetails = await FtpClient.ListDirectoryDetailsAsync(rootDirectory, cancellationToken).ConfigureAwait(false);
-            var dictionaryDetails = dataFilesDetails.ToDictionary(x => x.Split(' ', 9, StringSplitOptions.RemoveEmptyEntries).Last(), x => x);
+            Dictionary<string, string> dictionaryDetails = ParseToDictionary(dataFilesDetails);
             dictionaryDetails.TryGetValue(Path.GetFileName(relativePath), out string? detail);
             return detail?.StartsWith('d') ?? false;
         }
@@ -329,9 +340,10 @@ namespace ValheimFTPSync.Services
                 recursivePath.Push(parentRelativePath);
                 parentRelativePath = Path.GetDirectoryName(parentRelativePath);
             }
+            bool makeDirectory = false;
             while (recursivePath.TryPop(out parentRelativePath) && !string.IsNullOrEmpty(parentRelativePath))
             {
-                if (!IsDirectory(parentRelativePath))
+                if (makeDirectory || (makeDirectory = !IsDirectory(parentRelativePath)))
                     FtpClient.MakeDirectory(parentRelativePath, cancellationToken);
             }
         }
@@ -344,12 +356,10 @@ namespace ValheimFTPSync.Services
                 recursivePath.Push(parentRelativePath);
                 parentRelativePath = Path.GetDirectoryName(parentRelativePath);
             }
-            bool isDirectory = true;
+            bool makeDirectory = false;
             while (recursivePath.TryPop(out parentRelativePath) && !string.IsNullOrEmpty(parentRelativePath))
             {
-                if (isDirectory)
-                    isDirectory = await IsDirectoryAsync(parentRelativePath).ConfigureAwait(false);
-                if (!isDirectory)
+                if (makeDirectory || (makeDirectory = !await IsDirectoryAsync(parentRelativePath).ConfigureAwait(false)))
                     await FtpClient.MakeDirectoryAsync(parentRelativePath, cancellationToken).ConfigureAwait(false);
             }
         }
