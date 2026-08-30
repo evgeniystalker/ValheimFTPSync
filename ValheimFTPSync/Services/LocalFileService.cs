@@ -15,17 +15,12 @@ namespace ValheimFTPSync.Services
                 Directory.CreateDirectory(path);
         }
 
-        public FileStream? CreateFileStream(string pathFile, Operation direct, bool async)
+        public FileStream CreateFileStream(string pathFile, Operation direct, bool async) => direct switch
         {
-            if (File.Exists(pathFile))
-                return direct switch
-                {
-                    Operation.Upload => new FileStream(pathFile, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, async),
-                    Operation.Download or Operation.Append => new FileStream(pathFile, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, async),
-                    _ => null
-                };
-            return null;
-        }
+            Operation.Upload => new FileStream(pathFile, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, async),
+            Operation.Download or Operation.Append => new FileStream(pathFile, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, async),
+            _ => throw new ArgumentOutOfRangeException(nameof(direct), direct, "Неподдерживаемая операция")
+        };
 
         public void UpdateLocalFileAttrributeDateTime(string pathFile, DateTime attrDateTime)
         {

@@ -84,94 +84,49 @@ namespace ValheimFTPSync.Services
             }
         }
 
-        /// <summary>
-        /// Загружает локальные файлы обратно на FTP с прогрессом и поддержкой отмены.
-        /// </summary>
-     /*   public async Task UploadFilesBack(string pathTempDirectory, IProgress<(float, string, float)> progress, CancellationToken token)
+        public void DeleteFilesOnFtp(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken)
         {
-            List<string> TempDirectory = Directory.GetDirectories(pathTempDirectory, "*", SearchOption.AllDirectories).ToList();
-            List<string> filesInTempDirectory = Directory.GetFiles(pathTempDirectory, "", SearchOption.AllDirectories).ToList();
-            //FTPLISTS
-            //List<string> filesAll = DirectoryModel.GetFilesInDirectoryRecursive(ListFiles);
-            //List<string> directories = DirectoryModel.GetDirectoryRecursive(ListFiles);
-            var directories = TempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Uri, x).OriginalString).ToList();
-            var filesAll = filesInTempDirectory.Select(x => Path.GetRelativePath(pathTempDirectory, x)).Select(x => new Uri(Uri, x).OriginalString).ToList();
-
-            if (token.IsCancellationRequested)
-                token.ThrowIfCancellationRequested();
-
-            foreach (var path in directories)
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
             {
-                CreateDirectoryFtp(path);
-            }
-
-            int countFiles = 0;
-            string fileName = "";
-            Progress<float> progressOneFileUploading = new Progress<float>(prog =>
-            {
-                progress.Report((((prog + countFiles) / filesAll.Count), fileName, prog));
-            });
-
-            foreach (string file in filesAll)
-            {
-                if (token.IsCancellationRequested)
-                    token.ThrowIfCancellationRequested();
-                fileName = Path.GetFileName(file);
-                Uri fileNameUri = new Uri(file);
-                var tempPath = Path.Combine(pathTempDirectory, Uri.MakeRelativeUri(fileNameUri).ToString());
-                if (!File.Exists(tempPath))
-                    throw new Exception("Не найден файл " + tempPath);
-                await Task.Run(() => UploadFileFtp(tempPath, fileNameUri, progressOneFileUploading));
-                countFiles++;
-            }
-
-        }*/
-
-        /// <summary>
-        /// Удаляет все файлы и каталоги в целевой папке FTP.
-        /// </summary>
-/*        public async Task DeleteFilesFTP(IProgress<(float, string, float)> progress, CancellationToken ct)
-        {
-            if (ct.IsCancellationRequested)
-                ct.ThrowIfCancellationRequested();
-            dirModel = LoadDirectoryModel(Uri.OriginalString);
-            List<FileModel> filesAll = dirModel.GetFilesInDirectoryRecursive();
-            List<DirectoryModel> dirAll = dirModel.GetDirectoryRecursive();
-            DateTimeChanged.Invoke(filesAll.Select(x => x.DateTimeChangedFile).Max());
-            int count = 0;
-            foreach (var file in filesAll)
-            {
-                FtpWebRequest ftpWeb = FtpWebRequest.Create(file.FilePath) as FtpWebRequest;
-                ftpWeb.Method = WebRequestMethods.Ftp.DeleteFile;
-                FtpWebResponse response = (FtpWebResponse)await ftpWeb.GetResponseAsync();
-                if (!response.StatusDescription.Contains("250") && response.StatusCode != FtpStatusCode.FileActionOK)
-                {
-                    throw new Exception("Ошибка при удалении файла " + file.FilePath);
-                }
-                response.Close();
-
-                progress.Report((++count / (float)(filesAll.Count + dirAll.Count), "Удалено: " + file.FileName, 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
-            }
-            foreach (var dir in dirAll)
-            {
-                FtpWebRequest ftpWeb = FtpWebRequest.Create(dir.PathDirectory) as FtpWebRequest;
-                ftpWeb.Method = WebRequestMethods.Ftp.RemoveDirectory;
-                FtpWebResponse response = (FtpWebResponse)await ftpWeb.GetResponseAsync();
-                if (!response.StatusDescription.Contains("250") && response.StatusCode != FtpStatusCode.FileActionOK)
-                {
-                    throw new Exception("Ошибка при удалении директории " + dir.NameDirectory);
-                }
-                response.Close();
-                progress.Report((++count / (float)(filesAll.Count + dirAll.Count), "Удалено: " + dir.NameDirectory, 1));
-                if (ct.IsCancellationRequested)
-                    ct.ThrowIfCancellationRequested();
+                progress?.Report(new OperationProgress(file.RelativePath, default, index, fileModels.Count, Operation.Delete));
+                cancellationToken.ThrowIfCancellationRequested();
+                FtpClient.DeleteFile(file.RelativePath);
             }
         }
-*/        /// <summary>
-        /// Удаляет все файлы и каталоги во временной локальной папке.
-        /// </summary>
+
+        public async Task DeleteFilesOnFtpAsync(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
+            {
+                progress?.Report(new OperationProgress(file.RelativePath, default, index, fileModels.Count, Operation.Delete));
+                cancellationToken.ThrowIfCancellationRequested();
+                await FtpClient.DeleteFileAsync(file.RelativePath).ConfigureAwait(false);
+            }
+        }
+
+        public void RemoveDirectories(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
+            {
+                progress?.Report(new OperationProgress(file.RelativePath, default, index, fileModels.Count, Operation.Delete));
+                cancellationToken.ThrowIfCancellationRequested();
+                FtpClient.RemoveDirectory(file.RelativePath, cancellationToken);
+            }
+        }
+
+        public async Task RemoveDirectoriesAsync(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach ((int index, FtpFileModel file) in fileModels.Index())
+            {
+                progress?.Report(new OperationProgress(file.RelativePath, default, index, fileModels.Count, Operation.Delete));
+                cancellationToken.ThrowIfCancellationRequested();
+                await FtpClient.RemoveDirectoryAsync(file.RelativePath, cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         public void DownloadFiles(IReadOnlyCollection<FtpFileModel> fileModels, string targetDirectoryPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken = default)
         {
@@ -181,12 +136,21 @@ namespace ValheimFTPSync.Services
                 cancellationToken.ThrowIfCancellationRequested();
                 var localFilePath = Path.Combine(targetDirectoryPath, file.RelativePath).Replace("/", "\\");
                 LocalFileService.CreateDirectory(Path.GetDirectoryName(localFilePath));
-                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download);
-
+                FileStream? fileStream = default;
+                try
+                {
+                    fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download);
+                }
+                catch (IOException ex)
+                {
+                    Logger.Error("Error when creating a FileStream", ex);
+                    continue;
+                }
                 IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
                         progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Download)
                         ));
-                FtpClient.DownloadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
+                using (fileStream)
+                    FtpClient.DownloadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
             }
         }
 
@@ -198,12 +162,22 @@ namespace ValheimFTPSync.Services
                 cancellationToken.ThrowIfCancellationRequested();
                 var localFilePath = Path.Combine(targetDirectoryPath, file.RelativePath).Replace("/", "\\");
                 LocalFileService.CreateDirectory(Path.GetDirectoryName(localFilePath));
-                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download, async: true);
 
+                FileStream? fileStream = default;
+                try
+                {
+                    fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Download, async: true);
+                }
+                catch (IOException ex)
+                {
+                    Logger.Error("Error when creating a FileStream", ex);
+                    continue;
+                }
                 IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
-                        progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Download)
-                        ));
-                await FtpClient.DownloadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
+                    progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Download)
+                    ));
+                await using (fileStream)
+                    await FtpClient.DownloadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -214,7 +188,16 @@ namespace ValheimFTPSync.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var localFilePath = Path.Combine(sourceDirectoryPath, file.RelativePath).Replace("/", "\\");
-                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload);
+                FileStream? fileStream = default;
+                try
+                {
+                    fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload);
+                }
+                catch (IOException ex)
+                {
+                    Logger.Error("Error when creating a FileStream", ex);
+                    continue;
+                }
 
                 var treeDirectory = Path.GetDirectoryName(file.RelativePath);
                 if (!string.IsNullOrEmpty(treeDirectory))
@@ -224,7 +207,8 @@ namespace ValheimFTPSync.Services
                         progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Upload)
                         ));
 
-                FtpClient.UploadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
+                using (fileStream)
+                    FtpClient.UploadFile(file.RelativePath, fileStream, transferProgres, cancellationToken);
             }
         }
 
@@ -232,27 +216,30 @@ namespace ValheimFTPSync.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
             foreach ((int index, FtpFileModel file) in fileModels.Index())
-            {//сделать создание директориии.
+            {
                 cancellationToken.ThrowIfCancellationRequested();
                 var localFilePath = Path.Combine(sourceDirectoryPath, file.RelativePath).Replace("/", "\\");
-
-                if (!File.Exists(localFilePath))
+                FileStream? fileStream = default;
+                try
                 {
-                    Logger.Error($"File not found: {localFilePath}");
-                    return;///
+                    fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload, async: true);
                 }
-                using FileStream fileStream = LocalFileService.CreateFileStream(localFilePath, Operation.Upload, async: true);
+                catch (IOException ex)
+                {
+                    Logger.Error("Error when creating a FileStream", ex);
+                    continue;
+                }
 
                 var treeDirectory = Path.GetDirectoryName(file.RelativePath);
                 if (!string.IsNullOrEmpty(treeDirectory))
                     await MakeDirectoryRecursiveAsync(treeDirectory);
 
-
                 IProgress<TransferProgress> transferProgres = new Progress<TransferProgress>(tp =>
                         progress?.Report(new OperationProgress(file.RelativePath, tp, index, fileModels.Count, Operation.Upload)
                         ));
 
-                await FtpClient.UploadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
+                await using (fileStream)
+                    await FtpClient.UploadFileAsync(file.RelativePath, fileStream, transferProgres, cancellationToken).ConfigureAwait(false);
             }
         }
 

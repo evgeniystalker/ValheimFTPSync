@@ -17,5 +17,9 @@ namespace ValheimFTPSync.Services.Interfaces
         Task MakeDirectoryRecursiveAsync(string relativePath, CancellationToken cancellationToken = default);
         bool TryConnect(CancellationToken cancellationToken = default);
         Task<bool> TryConnectAsync(CancellationToken cancellationToken = default);
+        Task DeleteFilesOnFtpAsync(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken);
+        void DeleteFilesOnFtp(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken);
+        void RemoveDirectories(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken);
+        Task RemoveDirectoriesAsync(IReadOnlyCollection<FtpFileModel> fileModels, IProgress<OperationProgress>? progress, CancellationToken cancellationToken);
     }
 }

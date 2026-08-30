@@ -27,5 +27,6 @@ namespace ValheimFTPSync.Models
         Upload,
         Download,
         Append,
+        Delete
     }
 }

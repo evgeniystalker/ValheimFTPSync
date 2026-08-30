@@ -8,7 +8,7 @@ namespace ValheimFTPSync.Services.Interfaces
     internal interface ILocalFileService
     {
         public void CreateDirectory(string? path);
-        FileStream? CreateFileStream(string pathFile, Operation direct, bool async = false);
+        FileStream CreateFileStream(string pathFile, Operation direct, bool async = false);
         public void UpdateLocalFileAttrributeDateTime(string pathFile, DateTime attrDateTime);
 
     }
