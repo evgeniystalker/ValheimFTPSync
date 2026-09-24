@@ -8,14 +8,14 @@ namespace ValheimFTPSync.Models
     {
             public string FileName;
             public string RelativePath;
-            public DateTime DateTimeChangedFile;
-            public long Length;
+            public DateTime Modified;
+            public long Size;
             public FtpFileModel(string fileName, string filePath, DateTime dateOfChanged, long lenght)
             {
                 FileName = fileName;
                 RelativePath = filePath;
-                DateTimeChangedFile = dateOfChanged;
-                Length = lenght;
+                Modified = dateOfChanged;
+                Size = lenght;
             }
     }
 }

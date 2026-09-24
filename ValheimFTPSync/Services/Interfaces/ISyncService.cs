@@ -7,6 +7,7 @@ namespace ValheimFTPSync.Services.Interfaces
 {
     internal interface ISyncService
     {
-        Task SyncAsync(IFtpClientBase ftpClient, string localPath, IProgress<OperationProgress>? progress, CancellationToken cancellationToken);
+        Task<IReadOnlyList<SyncItem>> CompareAsync(string localPath, CancellationToken cancellationToken = default);
+        Task SyncAsync(IReadOnlyList<SyncItem> items, CancellationToken cancellationToken = default);
     }
 }

@@ -14,8 +14,9 @@ namespace ValheimFTPSync
     public partial class MainForm : Form
     {
         private AppGlobalSettingManager SettingManager { get; set; }
-        private ISyncService SyncService { get; set; }
+        private ISyncService? SyncService { get; set; }
         private IAppLogger Logger { get; set; }
+        IFtpFactory ClientFactory { get; set; }
 
         private CancellationTokenSource? CancellationTokenSource { get; set; }
         public MainForm()
@@ -24,6 +25,7 @@ namespace ValheimFTPSync
             InitializeTimer();
             SettingManager = new AppGlobalSettingManager();
             Logger = new RichTextBoxLogger(loggerRichTextBox);
+            ClientFactory = new FtpFactory(Logger);
         }
 
         private void ChangeLanguage(string langCode)
@@ -129,8 +131,7 @@ namespace ValheimFTPSync
         [MemberNotNull(nameof(debounceTimer))]
         private void InitializeTimer()
         {
-            if (components is null)
-                components = new System.ComponentModel.Container();
+            components ??= new System.ComponentModel.Container();
             debounceTimer = new System.Timers.Timer(1000);
             components.Add(debounceTimer);
             debounceTimer.AutoReset = false;
@@ -142,8 +143,8 @@ namespace ValheimFTPSync
             ICredentials? credentials = null;
             if (!string.IsNullOrEmpty(ftpUserNameTextBox.Text) || !string.IsNullOrEmpty(ftpPasswordTextBox.Text))
                 credentials = new NetworkCredential(ftpUserNameTextBox.Text, ftpPasswordTextBox.Text);
-            IFtpClientFactory clientFactory = new FtpClientFactory(Logger);
-            var client = clientFactory.CreateFtpClient(ftpUrlTextBox.Text, credentials);
+            
+            var client = ClientFactory.CreateFtpClient(ftpUrlTextBox.Text, credentials);
             FtpService ftpService = new FtpService(client, Logger, new LocalFileService());
             var isConnect = await (ftpService.TryConnectAsync() ?? Task.FromResult(false));
             Invoke(new Action(() =>

@@ -6,10 +6,11 @@ using ValheimFTPSync.Services.Interfaces;
 
 namespace ValheimFTPSync.Services
 {
-    internal class FtpClientFactory : IFtpClientFactory
+    internal class FtpFactory : IFtpFactory
     {
         IAppLogger _appLogger;
-        public FtpClientFactory(IAppLogger logger)
+
+        public FtpFactory(IAppLogger logger)
         {
             _appLogger = logger;
         }
@@ -37,5 +38,16 @@ namespace ValheimFTPSync.Services
             var ftpClient = new FtpClient(tryUri, credentials);
             return new LoggingFtpClient(ftpClient, _appLogger);
         }
+
+        public IFtpService? CreateFtpService(IFtpClientBase ftpCLient, ILocalFileService localFileService)
+        {
+            return new FtpService(ftpCLient, _appLogger, localFileService);
+        }
+
+        public ISyncService? CreateSyncService(IFtpService ftpService, IUserInteractive userInteractive, ILocalFileService localFileService)
+        {
+            return new SyncService(ftpService, localFileService, userInteractive, _appLogger);
+        }
     }
 }
+
