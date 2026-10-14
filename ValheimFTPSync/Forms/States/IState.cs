@@ -8,6 +8,6 @@ namespace ValheimFTPSync.Forms.States
     {
         void ExitState(IStateContext context);
 
-        void EnterState();
+        void EnterState(IStateContext context);
     }
 }

@@ -10,5 +10,6 @@ namespace ValheimFTPSync.Forms.States
         void TransientToState(IState state);
 
         void BlockUI();
+        void IdleUI();
     }
 }

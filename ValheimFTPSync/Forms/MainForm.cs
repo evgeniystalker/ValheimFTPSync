@@ -5,6 +5,7 @@ using System.Net;
 using System.Resources;
 using System.Timers;
 using ValheimFTPSync.Configuration;
+using ValheimFTPSync.Forms.States;
 using ValheimFTPSync.Models;
 using ValheimFTPSync.Services;
 using ValheimFTPSync.Services.Interfaces;
@@ -18,6 +19,8 @@ namespace ValheimFTPSync
         private IAppLogger Logger { get; set; }
         IFtpFactory ClientFactory { get; set; }
 
+        private IStateContext _stateContext { get; set; }
+
         private CancellationTokenSource? CancellationTokenSource { get; set; }
         public MainForm()
         {
@@ -26,6 +29,7 @@ namespace ValheimFTPSync
             SettingManager = new AppGlobalSettingManager();
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             ClientFactory = new FtpFactory(Logger);
+            _stateContext = new StateContext(new IdleState(), this);
         }
 
         private void ChangeLanguage(string langCode)
@@ -103,21 +107,30 @@ namespace ValheimFTPSync
         private void serverButton_Click(object sender, EventArgs e)
         {
             if (CancellationTokenSource == null)
+            {
+                CancellationTokenSource = new CancellationTokenSource();
                 startServerButton_Click(sender, e);
+            }
             else
-                CancellationTokenSource.CancelAsync();
+            {
+                CancellationTokenSource.CancelAfter(5000);
+                Task.Delay(6000).Wait();
+
+               CancellationTokenSource.Dispose();
+                CancellationTokenSource = null;
+                stopServerButton_Click(sender, e).Wait();
+            }
         }
 
-        private void startServerButton_Click(object? sender, EventArgs e)
+        private async Task startServerButton_Click(object? sender, EventArgs e)
         {
             SettingManager.Save();
-            CancellationTokenSource = new CancellationTokenSource();
-            RunningState(true);
-
+            _stateContext.TransientToState(new LoadingState());
+            await Task.Delay(10000, CancellationTokenSource.Token);
         }
-        private void stopServerButton_Click(object? sender, EventArgs e)
+        private async Task stopServerButton_Click(object? sender, EventArgs e)
         {
-            RunningState(false);
+            _stateContext.TransientToState(new IdleState());
         }
 
         private void journalButton_Click(object sender, EventArgs e)
@@ -143,7 +156,7 @@ namespace ValheimFTPSync
             ICredentials? credentials = null;
             if (!string.IsNullOrEmpty(ftpUserNameTextBox.Text) || !string.IsNullOrEmpty(ftpPasswordTextBox.Text))
                 credentials = new NetworkCredential(ftpUserNameTextBox.Text, ftpPasswordTextBox.Text);
-            
+
             var client = ClientFactory.CreateFtpClient(ftpUrlTextBox.Text, credentials);
             FtpService ftpService = new FtpService(client, Logger, new LocalFileService());
             var isConnect = await (ftpService.TryConnectAsync() ?? Task.FromResult(false));
@@ -213,10 +226,10 @@ namespace ValheimFTPSync
         {
             SettingManager.AppSettingManager.RememberPassword = rememberPassCheckBox.Checked;
         }
-        public void RunningState(bool enable)
+        public void EnableUI(bool enable)
         {
             ftpPasswordTextBox.Enabled = ftpUserNameTextBox.Enabled = ftpUrlTextBox.Enabled = serverAppPathTextBox.Enabled = serverAppPathBrowseButton.Enabled = enable;
-            serverButton.BackgroundImage = enable ? Properties.Resources.stop_button : Properties.Resources.start_button;
+            serverButton.BackgroundImage = enable ? Properties.Resources.start_button : Properties.Resources.stop_button;
         }
     }
 }

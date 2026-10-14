@@ -13,18 +13,24 @@ namespace ValheimFTPSync.Forms.States
         {
             CurrentState = currentState;
             MainForm = mainForm;
+            CurrentState.EnterState(this);
         }
 
         public void TransientToState(IState state)
         {
-            state.ExitState(this);
+            CurrentState.ExitState(this);
             CurrentState = state;
-            state.EnterState();
+            CurrentState.EnterState(this);
         }
 
         public void BlockUI()
         {
-            MainForm.BlockUI();
+            MainForm.EnableUI(false);
+        }
+
+        public void IdleUI()
+        {
+            MainForm.EnableUI(true);
         }
     }
 }

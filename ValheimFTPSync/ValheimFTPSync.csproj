@@ -8,12 +8,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Resources\IconValheim.ico</ApplicationIcon>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Forms\States\**" />
-    <EmbeddedResource Remove="Forms\States\**" />
-    <None Remove="Forms\States\**" />
-  </ItemGroup>
 	
 	<ItemGroup>
 		<InternalsVisibleTo Include="ValheimFTPSync.Test;DynamicProxyGenAssembly2;">

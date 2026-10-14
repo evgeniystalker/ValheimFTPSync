@@ -27,7 +27,7 @@ namespace ValheimFTPSync.Test
         [Fact]
         public async Task TryConnect_RealNetwork_ShouldReturnTrue()
         {
-            FtpClientFactory ftpClientFactory = new FtpClientFactory(_appLogger);
+            FtpFactory ftpClientFactory = new FtpFactory(_appLogger);
             var client = ftpClientFactory.CreateFtpClient(_realFtpUri.OriginalString, _credentials);
             Assert.NotNull(client);
             FtpService ftpService = new FtpService(client, _appLogger, new LocalFileService());
@@ -37,7 +37,7 @@ namespace ValheimFTPSync.Test
         [Fact/*(Skip = "Real File")*/]
         public async Task DownloadRealFiles_RealNetwork_ShouldReturnTrue()
         {
-            FtpClientFactory ftpClientFactory = new FtpClientFactory(_appLogger);
+            FtpFactory ftpClientFactory = new FtpFactory(_appLogger);
             var client = ftpClientFactory.CreateFtpClient(_realFtpUri.OriginalString, _credentials);
             Assert.NotNull(client);
             IFtpService service = new FtpService(client, _appLogger, new LocalFileService());
@@ -55,7 +55,7 @@ namespace ValheimFTPSync.Test
         [Fact]
         public async Task UploadRealFiles_RealNetwork_ShouldReturnTrue()
         {
-            FtpClientFactory ftpClientFactory = new FtpClientFactory(_appLogger);
+            FtpFactory ftpClientFactory = new FtpFactory(_appLogger);
             var client = ftpClientFactory.CreateFtpClient(_realFtpUri.OriginalString, _credentials);
             Assert.NotNull(client);
             IFtpService service = new FtpService(client, _appLogger, new LocalFileService());

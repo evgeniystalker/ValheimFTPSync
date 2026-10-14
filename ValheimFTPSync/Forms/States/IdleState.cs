@@ -4,12 +4,12 @@
     {
         public void EnterState(IStateContext context)
         {
-            context
+            context.IdleUI();
         }
 
-        public void ExitState()
+        public void ExitState(IStateContext context)
         {
-            throw new NotImplementedException();
+
         }
     }
 }
