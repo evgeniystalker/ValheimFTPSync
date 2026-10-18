@@ -28,7 +28,9 @@ namespace ValheimFTPSync.Services
             {
                 return action();
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (ex is OperationCanceledException
+            or WebException { Status: WebExceptionStatus.RequestCanceled }
+            || ex is WebException webEx && webEx.Message.Contains("cancel", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.Info($"Operation cancelled: {operation}");
                 return default;
@@ -66,7 +68,9 @@ namespace ValheimFTPSync.Services
             {
                 return await action();
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (ex is OperationCanceledException
+            or WebException { Status: WebExceptionStatus.RequestCanceled }
+            || ex is WebException webEx && webEx.Message.Contains("was cancel", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.Info($"Operation cancelled: {operation}");
                 return default;

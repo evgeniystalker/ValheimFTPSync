@@ -31,6 +31,14 @@ namespace ValheimFTPSync.Forms.States
         public void IdleUI()
         {
             MainForm.EnableUI(true);
+            MainForm.ServerButtonEnable(true);
         }
+
+        public void CancelUI()
+        {
+            BlockUI();
+            MainForm.ServerButtonEnable(false);
+        }
+
     }
 }

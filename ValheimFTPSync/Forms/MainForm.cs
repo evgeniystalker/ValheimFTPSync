@@ -15,13 +15,15 @@ namespace ValheimFTPSync
     public partial class MainForm : Form
     {
         private AppGlobalSettingManager SettingManager { get; set; }
-        private ISyncService? SyncService { get; set; }
         private IAppLogger Logger { get; set; }
         IFtpFactory ClientFactory { get; set; }
 
+        private readonly GameSessionManager _sessionManager;
+
         private IStateContext _stateContext { get; set; }
 
-        private CancellationTokenSource? CancellationTokenSource { get; set; }
+        private CancellationTokenSource? _connectionCheckCts;
+
         public MainForm()
         {
             InitializeComponent();
@@ -30,6 +32,7 @@ namespace ValheimFTPSync
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             ClientFactory = new FtpFactory(Logger);
             _stateContext = new StateContext(new IdleState(), this);
+            _sessionManager = new();
         }
 
         private void ChangeLanguage(string langCode)
@@ -103,40 +106,44 @@ namespace ValheimFTPSync
             }
         }
 
-
-        private void serverButton_Click(object sender, EventArgs e)
+        private async void serverButton_Click(object? sender, EventArgs e)
         {
-            if (CancellationTokenSource == null)
+            if (_sessionManager.IsRunning)
             {
-                CancellationTokenSource = new CancellationTokenSource();
-                startServerButton_Click(sender, e);
+                StopSession();
+                return;
             }
-            else
-            {
-                CancellationTokenSource.CancelAfter(5000);
-                Task.Delay(6000).Wait();
 
-               CancellationTokenSource.Dispose();
-                CancellationTokenSource = null;
-                stopServerButton_Click(sender, e).Wait();
+            try
+            {
+                SettingManager.Save();
+                _stateContext.TransientToState(new LoadingState());
+
+                await _sessionManager.RunAsync();
+            }
+            finally
+            {
+                _stateContext.TransientToState(new IdleState());
             }
         }
 
-        private async Task startServerButton_Click(object? sender, EventArgs e)
+        private void StopSession()
         {
-            SettingManager.Save();
-            _stateContext.TransientToState(new LoadingState());
-            await Task.Delay(10000, CancellationTokenSource.Token);
-        }
-        private async Task stopServerButton_Click(object? sender, EventArgs e)
-        {
-            _stateContext.TransientToState(new IdleState());
+            _stateContext.TransientToState(new CancelState());
+            _sessionManager.Stop();
         }
 
         private void journalButton_Click(object sender, EventArgs e)
         {
-            JournalForm journalForm = new JournalForm(new BindingList<ServerLogEntry>() { new ServerLogEntry() { DateTimeStartServer = DateTime.Now, NameUser = "zz" }, new ServerLogEntry() { DateTimeStartServer = DateTime.Now, NameUser = "zz" } });
-            journalForm.ShowDialog();
+            ICredentials? credentials = null;
+            if (!string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpUserName) || !string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpPassword))
+                credentials = new NetworkCredential(SettingManager.AppSettingManager.FtpUserName, SettingManager.AppSettingManager.FtpPassword);
+            var client = ClientFactory.CreateFtpClient(SettingManager.AppSettingManager.FtpUrl, credentials);
+            if (client != null)
+            {
+                JournalForm journalForm = new JournalForm(client);
+                journalForm.ShowDialog();
+            }
         }
 
         private System.Timers.Timer debounceTimer;
@@ -149,24 +156,34 @@ namespace ValheimFTPSync
             components.Add(debounceTimer);
             debounceTimer.AutoReset = false;
             debounceTimer.Elapsed += FtpUrlCheckConnect;
+            debounceTimer.SynchronizingObject = this;
         }
 
         private async void FtpUrlCheckConnect(object? sender, ElapsedEventArgs e)
         {
-            ICredentials? credentials = null;
-            if (!string.IsNullOrEmpty(ftpUserNameTextBox.Text) || !string.IsNullOrEmpty(ftpPasswordTextBox.Text))
-                credentials = new NetworkCredential(ftpUserNameTextBox.Text, ftpPasswordTextBox.Text);
+            _connectionCheckCts?.Cancel();
 
-            var client = ClientFactory.CreateFtpClient(ftpUrlTextBox.Text, credentials);
-            FtpService ftpService = new FtpService(client, Logger, new LocalFileService());
-            var isConnect = await (ftpService.TryConnectAsync() ?? Task.FromResult(false));
-            Invoke(new Action(() =>
+            using var cts = new CancellationTokenSource();
+            _connectionCheckCts = cts;
+
+            ICredentials? credentials = null;
+            if (!string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpUserName) || !string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpPassword))
+                credentials = new NetworkCredential(SettingManager.AppSettingManager.FtpUserName, SettingManager.AppSettingManager.FtpPassword);
+            var client = ClientFactory.CreateFtpClient(SettingManager.AppSettingManager.FtpUrl, credentials);
+            bool isConnect = false;
+            if (client != null)
             {
-                if (isConnect)
-                    connectStatusPictureBox.Image = Properties.Resources.cloud_check;
-                else
-                    connectStatusPictureBox.Image = Properties.Resources.cloud_remove;
-            }));
+                FtpService ftpService = new FtpService(client, Logger, new LocalFileService());
+                isConnect = await ftpService.TryConnectAsync(cts.Token);
+            }
+
+            if (!cts.IsCancellationRequested)
+            {
+                connectStatusPictureBox.Image = isConnect ? Properties.Resources.cloud_check : Properties.Resources.cloud_remove;
+            }
+
+            if (ReferenceEquals(_connectionCheckCts, cts))
+                _connectionCheckCts = null;
         }
 
         private void FtpUrlTextBox_TextChanged(object sender, EventArgs e)
@@ -230,6 +247,10 @@ namespace ValheimFTPSync
         {
             ftpPasswordTextBox.Enabled = ftpUserNameTextBox.Enabled = ftpUrlTextBox.Enabled = serverAppPathTextBox.Enabled = serverAppPathBrowseButton.Enabled = enable;
             serverButton.BackgroundImage = enable ? Properties.Resources.start_button : Properties.Resources.stop_button;
+        }
+        public void ServerButtonEnable(bool enable)
+        {
+            serverButton.Enabled = enable;
         }
     }
 }

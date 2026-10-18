@@ -157,6 +157,7 @@
             Controls.Add(buttonCancel);
             Controls.Add(buttonOk);
             FormBorderStyle = FormBorderStyle.FixedDialog;
+            Icon = Properties.Resources.IconValheim;
             Name = "ServerArgsForm";
             ResumeLayout(false);
             PerformLayout();

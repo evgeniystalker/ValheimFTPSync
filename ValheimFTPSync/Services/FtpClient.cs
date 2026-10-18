@@ -53,7 +53,7 @@ namespace ValheimFTPSync.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
             FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory);
-            cancellationToken.Register(request.Abort);
+            using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = request.GetResponse() as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             return true;
         }
@@ -65,7 +65,7 @@ namespace ValheimFTPSync.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
             FtpWebRequest request = CreateRequest(WebRequestMethods.Ftp.ListDirectory);
-            cancellationToken.Register(request.Abort);
+            using var registration = cancellationToken.Register(request.Abort);
             using FtpWebResponse response = await request.GetResponseAsync().ConfigureAwait(false) as FtpWebResponse ?? throw new InvalidOperationException("There is no response from the connection.");
             return true;
         }

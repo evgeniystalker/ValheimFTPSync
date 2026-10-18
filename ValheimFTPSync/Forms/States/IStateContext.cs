@@ -11,5 +11,6 @@ namespace ValheimFTPSync.Forms.States
 
         void BlockUI();
         void IdleUI();
+        void CancelUI();
     }
 }
