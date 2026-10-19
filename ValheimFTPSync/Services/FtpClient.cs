@@ -24,7 +24,6 @@ namespace ValheimFTPSync.Services
         }
         private ICredentials? Credentials { get; }
 
-
         /// <summary>
         /// Инициализация клиента из строки Uri.
         /// </summary>

@@ -12,7 +12,7 @@ using ValheimFTPSync.Services.Interfaces;
 
 namespace ValheimFTPSync
 {
-    public partial class MainForm : Form
+    public partial class MainForm : Form, IUserInteractive
     {
         private AppGlobalSettingManager SettingManager { get; set; }
         private IAppLogger Logger { get; set; }
@@ -32,7 +32,7 @@ namespace ValheimFTPSync
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             ClientFactory = new FtpFactory(Logger);
             _stateContext = new StateContext(new IdleState(), this);
-            _sessionManager = new();
+            _sessionManager = new GameSessionManager(Logger, ClientFactory, this, SettingManager);
         }
 
         private void ChangeLanguage(string langCode)
@@ -135,10 +135,8 @@ namespace ValheimFTPSync
 
         private void journalButton_Click(object sender, EventArgs e)
         {
-            ICredentials? credentials = null;
-            if (!string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpUserName) || !string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpPassword))
-                credentials = new NetworkCredential(SettingManager.AppSettingManager.FtpUserName, SettingManager.AppSettingManager.FtpPassword);
-            var client = ClientFactory.CreateFtpClient(SettingManager.AppSettingManager.FtpUrl, credentials);
+            var appSetting = SettingManager.AppSettingManager;
+            var client = ClientFactory.CreateFtpClient(appSetting.FtpUrl, appSetting.FtpUserName, appSetting.FtpPassword);
             if (client != null)
             {
                 JournalForm journalForm = new JournalForm(client);
@@ -165,11 +163,8 @@ namespace ValheimFTPSync
 
             using var cts = new CancellationTokenSource();
             _connectionCheckCts = cts;
-
-            ICredentials? credentials = null;
-            if (!string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpUserName) || !string.IsNullOrEmpty(SettingManager.AppSettingManager.FtpPassword))
-                credentials = new NetworkCredential(SettingManager.AppSettingManager.FtpUserName, SettingManager.AppSettingManager.FtpPassword);
-            var client = ClientFactory.CreateFtpClient(SettingManager.AppSettingManager.FtpUrl, credentials);
+            var appSetting = SettingManager.AppSettingManager;
+            var client = ClientFactory.CreateFtpClient(appSetting.FtpUrl, appSetting.FtpUserName, appSetting.FtpPassword);
             bool isConnect = false;
             if (client != null)
             {
@@ -251,6 +246,11 @@ namespace ValheimFTPSync
         public void ServerButtonEnable(bool enable)
         {
             serverButton.Enabled = enable;
+        }
+
+        ConflictResolutionAction IUserInteractive.ResolveFileConflict(string localFilePath, string remoteFilePath, uint localBytes, uint remoteBytes)
+        {
+            throw new NotImplementedException();
         }
     }
 }
