@@ -9,7 +9,7 @@ using ValheimFTPSync.Security;
 
 namespace ValheimFTPSync.Configuration
 {
-    internal class ServerArgsSettingsManager : ISettingManager
+    internal class ServerArgsSettingsManager : ISettingManager, ISettingSnapshot<ServerArgsSettingSnapshot>
     {
         private DpapiEncryptionService dpapiEncryptionService { get; set; } = new DpapiEncryptionService();
         public bool Nographics { get; set; }
@@ -137,6 +137,17 @@ namespace ValheimFTPSync.Configuration
                 comandLine.Add(name);
             }
             return string.Join(" ", comandLine);
+        }
+
+        public ServerArgsSettingSnapshot GetSnapshot()
+        {
+            return new ServerArgsSettingSnapshot(this.Nographics, this.Batchmode, this.Name, this.Port, this.World, this.Password, this.Crossplay, this.Savedir);
+        }
+
+        public void UpgradeVersion()
+        {
+            Properties.ServerArgsSettings.Default.Upgrade();
+            Initialize();
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ValheimFTPSync.Configuration
 {
-    internal class AppGlobalSettingManager : ISettingManager
+    internal class AppGlobalSettingManager : ISettingManager, ISettingSnapshot<AppGlobalSettingSnapshot>
     {
         public AppSettingManager AppSettingManager { get; set; } = new AppSettingManager();
         public ServerArgsSettingsManager ServerSettingsManager { get; set; } = new ServerArgsSettingsManager();
@@ -31,6 +31,17 @@ namespace ValheimFTPSync.Configuration
         {
             AppSettingManager.Reset();
             ServerSettingsManager.Reset();
+        }
+
+        public AppGlobalSettingSnapshot GetSnapshot()
+        {
+            return new AppGlobalSettingSnapshot(AppSettingManager.GetSnapshot(), ServerSettingsManager.GetSnapshot());
+        }
+
+        public void UpgradeVersion()
+        {
+            AppSettingManager.UpgradeVersion();
+            ServerSettingsManager.UpgradeVersion();
         }
     }
 }

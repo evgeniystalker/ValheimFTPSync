@@ -46,6 +46,7 @@
             ftpUserNameTextBox = new TextBox();
             ftpPasswordTextBox = new TextBox();
             rememberPassCheckBox = new CheckBox();
+            versionLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).BeginInit();
             SuspendLayout();
             // 
@@ -174,7 +175,14 @@
             rememberPassCheckBox.ForeColor = SystemColors.ActiveCaption;
             rememberPassCheckBox.Name = "rememberPassCheckBox";
             rememberPassCheckBox.UseVisualStyleBackColor = false;
-            rememberPassCheckBox.CheckedChanged += rememberPassCheckBox_CheckedChanged;
+            rememberPassCheckBox.CheckedChanged += RememberPassCheckBox_CheckedChanged;
+            // 
+            // versionLabel
+            // 
+            resources.ApplyResources(versionLabel, "versionLabel");
+            versionLabel.BackColor = Color.Transparent;
+            versionLabel.ForeColor = SystemColors.InactiveCaption;
+            versionLabel.Name = "versionLabel";
             // 
             // MainForm
             // 
@@ -197,10 +205,12 @@
             Controls.Add(serverAppPathBrowseButton);
             Controls.Add(serverAppPathTextBox);
             Controls.Add(loggerRichTextBox);
+            Controls.Add(versionLabel);
             Icon = Properties.Resources.IconValheim;
             Name = "MainForm";
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
+            Shown += MainForm_Shown;
             ((System.ComponentModel.ISupportInitialize)connectStatusPictureBox).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -225,5 +235,6 @@
         private TextBox ftpUserNameTextBox;
         private TextBox ftpPasswordTextBox;
         private CheckBox rememberPassCheckBox;
+        private Label versionLabel;
     }
 }

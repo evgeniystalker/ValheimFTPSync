@@ -6,7 +6,7 @@ using ValheimFTPSync.Security;
 
 namespace ValheimFTPSync.Configuration
 {
-    internal class AppSettingManager : ISettingManager
+    internal class AppSettingManager : ISettingManager, ISettingSnapshot<AppSettingSnapshot>
     {
         private DpapiEncryptionService dpapiEncryptionService { get; set; } = new DpapiEncryptionService();
         public string ServerAppFolderPath { get; set; }
@@ -17,6 +17,10 @@ namespace ValheimFTPSync.Configuration
         public string ValheimExePath => string.IsNullOrWhiteSpace(ServerAppFolderPath) ? string.Empty : Path.Combine(ServerAppFolderPath, "valheim_server.exe");
 
         public Point DisplayPostion { get; set; }
+
+        public string Language { get; set; }
+
+        public bool SettingUpgradeRequired { get; set; }
 
         public AppSettingManager()
         {
@@ -31,10 +35,12 @@ namespace ValheimFTPSync.Configuration
             Properties.Settings.Default.FtpPassword = RememberPassword ? dpapiEncryptionService.Encrypt(FtpPassword) : (string)Properties.Settings.Default.Properties[nameof(FtpPassword)].DefaultValue;
             Properties.Settings.Default.RememberPassword = RememberPassword;
             Properties.Settings.Default.DisplayPostion = DisplayPostion;
+            Properties.Settings.Default.SettingUpgradeRequired = SettingUpgradeRequired;
+            Properties.Settings.Default.Language = Language;
             Properties.Settings.Default.Save();
         }
 
-        [MemberNotNull(nameof(ServerAppFolderPath), nameof(FtpUrl), nameof(FtpUserName), nameof(FtpPassword))]
+        [MemberNotNull(nameof(ServerAppFolderPath), nameof(FtpUrl), nameof(FtpUserName), nameof(FtpPassword), nameof(Language))]
         public void Initialize()
         {
             ServerAppFolderPath = Properties.Settings.Default.ServerAppFolderPath;
@@ -43,6 +49,8 @@ namespace ValheimFTPSync.Configuration
             FtpPassword = Properties.Settings.Default.FtpPassword == (string)Properties.Settings.Default.Properties[nameof(FtpPassword)].DefaultValue ? Properties.Settings.Default.FtpPassword : dpapiEncryptionService.Decrypt(Properties.Settings.Default.FtpPassword);
             DisplayPostion = Properties.Settings.Default.DisplayPostion;
             RememberPassword = Properties.Settings.Default.RememberPassword;
+            SettingUpgradeRequired = Properties.Settings.Default.SettingUpgradeRequired;
+            Language = Properties.Settings.Default.Language;
         }
 
         public void Reset()
@@ -59,6 +67,8 @@ namespace ValheimFTPSync.Configuration
             FtpPassword = (string)settings.Properties[nameof(settings.FtpPassword)].DefaultValue;
             RememberPassword = (bool)settings.Properties[nameof(settings.RememberPassword)].DefaultValue;
             DisplayPostion = (Point)settings.Properties[nameof(settings.DisplayPostion)].DefaultValue;
+            Language = (string)settings.Properties[nameof(settings.Language)].DefaultValue;
+            SettingUpgradeRequired = false;
         }
         public string ClearUriCredentials(string uri)
         {
@@ -73,6 +83,19 @@ namespace ValheimFTPSync.Configuration
             {
                 return uri;
             }
+        }
+
+        public AppSettingSnapshot GetSnapshot()
+        {
+            return new AppSettingSnapshot(this.ServerAppFolderPath, this.FtpUrl, this.FtpUserName, this.FtpPassword, this.RememberPassword, this.DisplayPostion, this.ValheimExePath);
+        }
+
+        public void UpgradeVersion()
+        {
+            Properties.Settings.Default.Upgrade();
+            Initialize();
+            SettingUpgradeRequired = false;
+            Save();
         }
     }
 }

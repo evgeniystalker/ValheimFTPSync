@@ -25,5 +25,10 @@ namespace ValheimFTPSync.Configuration
         /// Сброс файла настроек.
         /// </summary>
         public void Reset();
+
+        /// <summary>
+        /// Обновление настроек для новой версии приложения.
+        /// </summary>
+        public void UpgradeVersion();
     }
 }

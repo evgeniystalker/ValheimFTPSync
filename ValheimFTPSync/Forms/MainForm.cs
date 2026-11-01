@@ -1,12 +1,13 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Net;
 using System.Resources;
 using System.Timers;
 using ValheimFTPSync.Configuration;
 using ValheimFTPSync.Forms.States;
 using ValheimFTPSync.Models;
+using ValheimFTPSync.Properties;
 using ValheimFTPSync.Services;
 using ValheimFTPSync.Services.Interfaces;
 
@@ -32,7 +33,7 @@ namespace ValheimFTPSync
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             ClientFactory = new FtpFactory(Logger);
             _stateContext = new StateContext(new IdleState(), this);
-            _sessionManager = new GameSessionManager(Logger, ClientFactory, this, SettingManager);
+            _sessionManager = new GameSessionManager(Logger, ClientFactory, (IUserInteractive)this);
         }
 
         private void ChangeLanguage(string langCode)
@@ -46,8 +47,14 @@ namespace ValheimFTPSync
 
             serverAppPathBrowserDialog.Description = rm.GetString(nameof(serverAppPathBrowserDialog) + ".Description", culture) ?? serverAppPathBrowserDialog.Description;
             // 3. Обновляем строки для каждого элемента управления на форме
+
+            Control[] BlockedControls = { versionLabel };
+
             foreach (Control ctrl in this.Controls)
             {
+                if (BlockedControls.Contains(ctrl))
+                    continue;
+
                 if (ctrl is TextBox textBox)
                 {
                     textBox.PlaceholderText = rm.GetString(ctrl.Name + "." + nameof(textBox.PlaceholderText), culture);
@@ -67,6 +74,7 @@ namespace ValheimFTPSync
             if (sender is Control control && control.Tag is string locale)
             {
                 ChangeLanguage(locale);
+                SettingManager.AppSettingManager.Language = locale;
             }
         }
 
@@ -119,7 +127,7 @@ namespace ValheimFTPSync
                 SettingManager.Save();
                 _stateContext.TransientToState(new LoadingState());
 
-                await _sessionManager.RunAsync();
+                await _sessionManager.RunAsync(SettingManager.GetSnapshot());
             }
             finally
             {
@@ -214,6 +222,12 @@ namespace ValheimFTPSync
 
         private void LoadSettings()
         {
+            if (SettingManager.AppSettingManager.SettingUpgradeRequired)
+                SettingManager.UpgradeVersion();
+            if (!string.IsNullOrEmpty(SettingManager.AppSettingManager.Language) && SettingManager.AppSettingManager.Language != CultureInfo.CurrentUICulture.Name)
+                ChangeLanguage(SettingManager.AppSettingManager.Language);
+
+
             var point = SettingManager.AppSettingManager.DisplayPostion;
 
             if (!point.IsEmpty && Screen.AllScreens.Any(screen => screen.WorkingArea.Contains(point)))
@@ -234,7 +248,7 @@ namespace ValheimFTPSync
             debounceTimer.Elapsed -= FtpUrlCheckConnect;
         }
 
-        private void rememberPassCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void RememberPassCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             SettingManager.AppSettingManager.RememberPassword = rememberPassCheckBox.Checked;
         }
@@ -246,6 +260,31 @@ namespace ValheimFTPSync
         public void ServerButtonEnable(bool enable)
         {
             serverButton.Enabled = enable;
+        }
+
+        private async void MainForm_Shown(object sender, EventArgs e)
+        {
+            if (!AppVersion.TryParse(Application.ProductVersion, out AppVersion? appVersion))
+            {
+                Logger.Info(Messages.VersionNotParsed);
+                versionLabel.Enabled = false;
+                return;
+            }
+            versionLabel.Text = appVersion.Version + (appVersion.Prereliase is not null ? "-" + appVersion.Prereliase : string.Empty);
+
+            UpdateAppService updateAppService = new(Logger);
+            var latest = await updateAppService.CheckForUpdatesAsync(appVersion.Prereliase is not null);
+            if (latest is null || latest <= appVersion)
+            {
+                Logger.Info(Messages.NewVersionNotFound);
+                return;
+            }
+
+            if (IsDisposed) return;
+
+            var answer = MessageBox.Show(this, String.Format(Messages.VersionAvailable, latest.Version + latest.Prereliase?.Insert(0, "-")), Messages.Update, MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if (answer == DialogResult.Yes)
+                Process.Start(new ProcessStartInfo("https://github.com/evgeniystalker/ValheimFTPSync/releases/latest") { UseShellExecute = true });
         }
 
         ConflictResolutionAction IUserInteractive.ResolveFileConflict(string localFilePath, string remoteFilePath, uint localBytes, uint remoteBytes)

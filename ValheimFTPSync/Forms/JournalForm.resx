@@ -166,7 +166,7 @@
     <value>1</value>
   </data>
   <data name="loadingProgressBar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
+    <value>None</value>
   </data>
   <data name="loadingProgressBar.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
