@@ -132,4 +132,10 @@
   <data name="ErrorUpdate" xml:space="preserve">
     <value>Жаңартуларды тексеру мүмкін емес:</value>
   </data>
+  <data name="OperationСanceled" xml:space="preserve">
+    <value>Операция тоқтатылды.</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Ескерту</value>
+  </data>
 </root>

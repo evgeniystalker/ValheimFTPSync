@@ -36,8 +36,7 @@ namespace ValheimFTPSync.Configuration
             World = Properties.ServerArgsSettings.Default.World;
             Password = Properties.ServerArgsSettings.Default.Password == (string)Properties.ServerArgsSettings.Default.Properties[nameof(Password)].DefaultValue ? Properties.ServerArgsSettings.Default.Password : dpapiEncryptionService.Decrypt(Properties.ServerArgsSettings.Default.Password);
             Crossplay = Properties.ServerArgsSettings.Default.Crossplay;
-            Savedir = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
-            //Savedir = 
+            Savedir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Application.ProductName ?? throw new InvalidOperationException("Application product name is not specified."), "Saves");
         }
 
         public void Save()
@@ -49,7 +48,6 @@ namespace ValheimFTPSync.Configuration
             Properties.ServerArgsSettings.Default.Nographics = Nographics;
             Properties.ServerArgsSettings.Default.Batchmode = Batchmode;
             Properties.ServerArgsSettings.Default.Crossplay = Crossplay;
-            //Properties.ServerArgsSettings.Default.SaveDir =
             Properties.ServerArgsSettings.Default.Save();
         }
 
@@ -74,69 +72,6 @@ namespace ValheimFTPSync.Configuration
         {
             Properties.ServerArgsSettings.Default.Reset();
             Initialize();
-        }
-
-        private static string[] intParams = new string[] { "-port" };
-        private static string[] stringParams = new string[] { "-name", "-world", "-password", "-savedir" };
-        private static string[] boolParams = new string[] { "-nographics", "-batchmode", "-crossplay" };
-
-        /// <summary>
-        /// Возвращает полный список поддерживаемых ключей параметров.
-        /// </summary>
-        public static string[] GetNameAllParams()
-        {
-            return boolParams.Concat(stringParams).Concat(intParams).ToArray();
-        }
-
-        /// <summary>
-        /// Возвращает ключи параметров по типу (bool/string/int).
-        /// </summary>
-        public static string[] GetNamesParams<T>()
-        {
-            if (typeof(bool) == typeof(T))
-                return boolParams;
-            else if (typeof(string) == typeof(T))
-                return stringParams;
-            else if (typeof(int) == typeof(T))
-                return intParams;
-            else throw new Exception("Invalid type params");
-        }
-
-        /// <summary>
-        /// Получает значение параметра по имени ключа (например, "-world").
-        /// </summary>
-        public T? GetParamValue<T>(string name)
-        {
-            if (name.Contains('-'))
-                name = name.Substring(1);
-
-            name = char.ToUpper(name[0]) + name.Substring(1);
-            var value = typeof(ServerArgsSettingsManager).GetProperty(name)?.GetValue(this);
-            return value is null ? default : (T)value;
-            //return (T?)typeof(ServerArgsSettingsManager ).GetProperty(name)?.GetValue(this) ?? default;
-        }
-
-        /// <summary>
-        /// Формирует строку параметров командной строки.
-        /// </summary>
-        public override string ToString()
-        {
-            List<string> comandLine = new List<string>();
-            foreach (string name in intParams)
-            {
-                comandLine.Add(name + " " + GetParamValue<int>(name));
-            }
-            foreach (string name in stringParams)
-            {
-                var value = GetParamValue<string>(name);
-                if (string.IsNullOrEmpty(value))
-                    comandLine.Add(name + " " + value);
-            }
-            foreach (string name in boolParams)
-            {
-                comandLine.Add(name);
-            }
-            return string.Join(" ", comandLine);
         }
 
         public ServerArgsSettingSnapshot GetSnapshot()

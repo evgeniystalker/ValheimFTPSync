@@ -20,6 +20,7 @@ namespace ValheimFTPSync
         IFtpFactory ClientFactory { get; set; }
 
         private readonly GameSessionManager _sessionManager;
+        private readonly GameSessionValidator _validator;
 
         private IStateContext _stateContext { get; set; }
 
@@ -33,7 +34,8 @@ namespace ValheimFTPSync
             Logger = new RichTextBoxLogger(loggerRichTextBox);
             ClientFactory = new FtpFactory(Logger);
             _stateContext = new StateContext(new IdleState(), this);
-            _sessionManager = new GameSessionManager(Logger, ClientFactory, (IUserInteractive)this);
+            _validator = new GameSessionValidator();
+            _sessionManager = new GameSessionManager(Logger, ClientFactory, (IUserInteractive)this, _validator);
         }
 
         private void ChangeLanguage(string langCode)
@@ -80,20 +82,20 @@ namespace ValheimFTPSync
 
         private void serverAppPathTextBox_TextChanged(object sender, EventArgs e)
         {
-            SettingManager.AppSettingManager.ServerAppFolderPath = serverAppPathTextBox.Text;
-            if (Directory.Exists(SettingManager.AppSettingManager.ServerAppFolderPath)
-                && File.Exists(SettingManager.AppSettingManager.ValheimExePath)
-                && SettingManager.AppSettingManager.ServerAppFolderPath != serverAppPathTextBox.Text)
+            if (SettingManager.AppSettingManager.ServerAppFolderPath != serverAppPathTextBox.Text)
             {
-                // Файл найден! Сохраняем настройки
-                SettingManager.AppSettingManager.Save();
-
+                SettingManager.AppSettingManager.ServerAppFolderPath = serverAppPathTextBox.Text;
+                if (_validator.ValidateExePath(SettingManager.AppSettingManager.ValheimExePath) is not null)
+                {
+                    // Файл найден! Сохраняем настройки
+                    SettingManager.AppSettingManager.Save();
+                }
             }
         }
 
         private void serverArgsButton_Click(object sender, EventArgs e)
         {
-            ServerArgsForm settingBatForm = new ServerArgsForm(SettingManager.ServerSettingsManager);
+            ServerArgsForm settingBatForm = new ServerArgsForm(SettingManager.ServerSettingsManager, _validator);
             settingBatForm.Owner = this;
             if (settingBatForm.ShowDialog() == DialogResult.OK)
             {
@@ -290,6 +292,18 @@ namespace ValheimFTPSync
         ConflictResolutionAction IUserInteractive.ResolveFileConflict(string localFilePath, string remoteFilePath, uint localBytes, uint remoteBytes)
         {
             throw new NotImplementedException();
+        }
+
+        bool IUserInteractive.ConfirmForceStopServer()
+        {
+            return MessageBox.Show(this, "Сервер ещё работает.\n" +
+                "Рекомендуется завершить его через Ctrl+C в консоли.\n" +
+                "Принудительное завершение может привести к потере несохранённых изменений мира.\n\n" +
+                "Завершить принудительно?",
+                "Внимание!",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
     }
 }

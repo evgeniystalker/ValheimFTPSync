@@ -70,11 +70,56 @@ namespace ValheimFTPSync.Properties {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на File not found ({0})..
+        /// </summary>
+        internal static string FileNotFound {
+            get {
+                return ResourceManager.GetString("FileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на The new version has not been found..
         /// </summary>
         internal static string NewVersionNotFound {
             get {
                 return ResourceManager.GetString("NewVersionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Operation canceled..
+        /// </summary>
+        internal static string OperationСanceled {
+            get {
+                return ResourceManager.GetString("OperationСanceled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Server process exited with code {0}..
+        /// </summary>
+        internal static string ProcessExitCode {
+            get {
+                return ResourceManager.GetString("ProcessExitCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Failed to start the server..
+        /// </summary>
+        internal static string ProcessFailedToStart {
+            get {
+                return ResourceManager.GetString("ProcessFailedToStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Server process started..
+        /// </summary>
+        internal static string ProcessStarted {
+            get {
+                return ResourceManager.GetString("ProcessStarted", resourceCulture);
             }
         }
         
@@ -102,6 +147,15 @@ namespace ValheimFTPSync.Properties {
         internal static string VersionNotParsed {
             get {
                 return ResourceManager.GetString("VersionNotParsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Warning!.
+        /// </summary>
+        internal static string Warning {
+            get {
+                return ResourceManager.GetString("Warning", resourceCulture);
             }
         }
     }

@@ -132,4 +132,22 @@
   <data name="ErrorUpdate" xml:space="preserve">
     <value>Unable to check for updates:</value>
   </data>
+  <data name="OperationСanceled" xml:space="preserve">
+    <value>Operation canceled.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>File not found ({0}).</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Warning!</value>
+  </data>
+  <data name="ProcessStarted" xml:space="preserve">
+    <value>Server process started.</value>
+  </data>
+  <data name="ProcessFailedToStart" xml:space="preserve">
+    <value>Failed to start the server.</value>
+  </data>
+  <data name="ProcessExitCode" xml:space="preserve">
+    <value>Server process exited with code {0}.</value>
+  </data>
 </root>
